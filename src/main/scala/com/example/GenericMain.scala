@@ -6,12 +6,10 @@ import com.tersesystems.echopraxia.plusscala.generic._
 
 import java.time.Instant
 
-trait AutoFieldBuilder extends FieldBuilder with AutoDerivation
+trait AutoFieldBuilder extends FieldBuilder with AutoDerivation with DiffFieldBuilder
   with KeyValueCaseClassDerivation
   with OptionValueTypes with EitherValueTypes {
   implicit val instantToValue: ToValue[Instant] = instant => ToValue(instant.toString)
-  // https://stackoverflow.com/questions/33544212/explain-the-lowpriorityimplicits-pattern-used-in-scala-type-level-programming
-  //implicit def specialForString[T](implicit ev: T <:< String): ToValue[T] = new ToValue[T] {
 }
 
 object AutoFieldBuilder extends AutoFieldBuilder
@@ -50,6 +48,8 @@ object GenericMain {
     val user = User("user1", 2342331)
     val order = Order(paymentInfo = paymentInfo, shippingInfo = shippingInfo, lineItems = lineItems, owner = user)
     autoLogger.info("{}", _.keyValue("order", order))
+
+    autoLogger.info("diff {}", _.diff[Order]("diff", order, order.copy(owner = order.owner.copy(name = "user2"))))
   }
 }
 
