@@ -2,6 +2,7 @@ package com.example
 
 import com.tersesystems.echopraxia.api.{Field, Value}
 import com.tersesystems.echopraxia.plusscala.api._
+import com.tersesystems.echopraxia.plusscala.async.AsyncLoggerFactory
 import com.tersesystems.echopraxia.plusscala.trace._
 import com.tersesystems.echopraxia.plusscala.{Logger, LoggerFactory}
 
@@ -48,8 +49,8 @@ object Main {
     }
   }
 
-  //private val asyncLogger: AsyncLogger[MyFieldBuilder] = AsyncLoggerFactory.getLogger.withFieldBuilder(MyFieldBuilder())
-  private val logger: Logger[MyFieldBuilder] = LoggerFactory.getLogger.withFieldBuilder(MyFieldBuilder)
+  private val asyncLogger = AsyncLoggerFactory.getLogger.withFieldBuilder(MyFieldBuilder)
+  private val logger = LoggerFactory.getLogger.withFieldBuilder(MyFieldBuilder)
 
   def main(args: Array[String]): Unit = {
     //    asyncLogger.withCondition(expensiveCondition).ifDebugEnabled { log =>
@@ -63,7 +64,17 @@ object Main {
 
     logger.debug(scriptCondition, "logs at info level")
 
-    //doStuff()
+
+    def doStuff: Unit = {
+      logger.info("{} {} {} {}", fb => fb.list(
+        fb.number("number" -> 1),
+        fb.bool("bool" -> true),
+        fb.array("ints" -> Seq(1, 2, 3)),
+        fb.string("strName" -> "bar")
+      ))
+    }
+
+    doStuff
     conditionUsingFields()
     thisMethod()
     messAroundWithDeeplyNestedThings()
@@ -85,7 +96,7 @@ object Main {
 
   def conditionUsingFields() = {
     val thisPerson = Person("will", "sargent", None)
-    logger.info(condition, "person matches! {}", _.person("person" -> thisPerson))
+    logger.info(condition, "person matches! {}", _.keyValue("person" -> thisPerson))
   }
 
   def messAroundWithDeeplyNestedThings() = {
@@ -113,7 +124,7 @@ object Main {
   //    true
   //  }
 
-  val isWill = Condition { (_: Level, context: LoggingContext) =>
+  val isWill: Condition = Condition { (_: Level, context: LoggingContext) =>
     val list = context.findList("$.person[?(@.firstName == 'will')]")
     val map = list.head.asInstanceOf[Map[String, Any]]
     map("firstName") == "will"

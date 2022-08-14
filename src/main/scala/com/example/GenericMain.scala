@@ -3,6 +3,7 @@ package com.example
 import com.tersesystems.echopraxia.plusscala.LoggerFactory
 import com.tersesystems.echopraxia.plusscala.api._
 import com.tersesystems.echopraxia.plusscala.generic._
+import com.tersesystems.echopraxia.plusscala.diff._
 
 import java.time.Instant
 
@@ -49,7 +50,7 @@ object GenericMain {
     val order = Order(paymentInfo = paymentInfo, shippingInfo = shippingInfo, lineItems = lineItems, owner = user)
     autoLogger.info("{}", _.keyValue("order", order))
 
-    autoLogger.info("diff {}", _.diff[Order]("diff", order, order.copy(owner = order.owner.copy(name = "user2"))))
+    autoLogger.info("diff {}", _.diff("diff", order, order.copy(owner = order.owner.copy(name = "user2"))))
   }
 }
 
