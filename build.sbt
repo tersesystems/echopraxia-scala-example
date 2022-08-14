@@ -6,7 +6,7 @@ ThisBuild / resolvers += Resolver.mavenLocal
 ThisBuild / resolvers += Resolver.defaultLocal
 
 val echopraxiaVersion = "2.2.0"
-val echopraxiaPlusScalaVersion = "1.1.0-SNAPSHOT"
+val echopraxiaPlusScalaVersion = "1.1.0"
 
 lazy val root = (project in file("."))
   .settings(
@@ -24,7 +24,6 @@ lazy val root = (project in file("."))
     // specialized field builders and loggers
     libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "nameof" % echopraxiaPlusScalaVersion,
     libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "diff" % echopraxiaPlusScalaVersion,
-    libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "dump" % echopraxiaPlusScalaVersion,
     libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "generic" % echopraxiaPlusScalaVersion,
     
     // specialized conditions
