@@ -1,11 +1,11 @@
 ThisBuild / version := "1.0.1-SNAPSHOT"
 
-ThisBuild / scalaVersion := "2.13.8"
+ThisBuild / scalaVersion := "2.13.10"
 
 ThisBuild / resolvers += Resolver.mavenLocal
 ThisBuild / resolvers += Resolver.defaultLocal
 
-val echopraxiaVersion = "2.2.0"
+val echopraxiaVersion = "2.2.3"
 val echopraxiaPlusScalaVersion = "1.1.0"
 
 lazy val root = (project in file("."))
@@ -28,5 +28,7 @@ lazy val root = (project in file("."))
     
     // specialized conditions
     libraryDependencies += "com.tersesystems.echopraxia" % "scripting" % echopraxiaVersion,
-    libraryDependencies += "com.tersesystems.echopraxia" % "filewatch" % echopraxiaVersion
+    libraryDependencies += "com.tersesystems.echopraxia" % "filewatch" % echopraxiaVersion,
+
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % Test
   )
