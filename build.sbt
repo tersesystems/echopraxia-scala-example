@@ -6,7 +6,7 @@ ThisBuild / resolvers += Resolver.mavenLocal
 ThisBuild / resolvers += Resolver.defaultLocal
 
 val echopraxiaVersion = "2.2.3"
-val echopraxiaPlusScalaVersion = "1.1.0"
+val echopraxiaPlusScalaVersion = "1.1.1"
 
 lazy val root = (project in file("."))
   .settings(
