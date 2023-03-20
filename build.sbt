@@ -5,7 +5,7 @@ ThisBuild / scalaVersion := "2.13.10"
 ThisBuild / resolvers += Resolver.mavenLocal
 ThisBuild / resolvers += Resolver.defaultLocal
 
-val echopraxiaVersion = "2.2.4"
+val echopraxiaVersion = "2.3.0-RC1"
 val echopraxiaPlusScalaVersion = "1.1.2"
 
 lazy val root = (project in file("."))
