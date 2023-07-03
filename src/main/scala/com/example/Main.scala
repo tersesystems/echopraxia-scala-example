@@ -22,7 +22,7 @@ object Main {
 
   object MyFieldBuilder extends MyFieldBuilder
 
-  trait MyFieldBuilder extends FieldBuilder {
+  trait MyFieldBuilder extends PresentationFieldBuilder {
     import com.tersesystems.echopraxia.api.Field
 
     implicit val uuidToValue: ToValue[UUID] = uuid => ToValue(uuid.toString)
@@ -49,8 +49,8 @@ object Main {
     }
   }
 
-  private val asyncLogger = AsyncLoggerFactory.getLogger.withFieldBuilder(MyFieldBuilder)
-  private val logger = LoggerFactory.getLogger.withFieldBuilder(MyFieldBuilder)
+  private val asyncLogger = AsyncLoggerFactory.getLogger(MyFieldBuilder)
+  private val logger = LoggerFactory.getLogger(MyFieldBuilder)
 
   def main(args: Array[String]): Unit = {
     //    asyncLogger.withCondition(expensiveCondition).ifDebugEnabled { log =>

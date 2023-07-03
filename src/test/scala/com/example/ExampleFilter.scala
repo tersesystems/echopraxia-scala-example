@@ -1,6 +1,6 @@
 package com.example
 
-import com.tersesystems.echopraxia.api.{CoreLogger, CoreLoggerFilter}
+import com.tersesystems.echopraxia.spi.{CoreLogger, CoreLoggerFilter}
 
 class ExampleFilter extends CoreLoggerFilter {
   override def apply(t: CoreLogger): CoreLogger = {
