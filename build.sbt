@@ -1,12 +1,12 @@
-ThisBuild / version := "1.0.1-SNAPSHOT"
+ThisBuild / version := "1.3.0"
 
 ThisBuild / scalaVersion := "2.13.10"
 
 ThisBuild / resolvers += Resolver.mavenLocal
 ThisBuild / resolvers += Resolver.defaultLocal
 
-val echopraxiaVersion = "2.3.1"
-val echopraxiaPlusScalaVersion = "1.2.1"
+val echopraxiaVersion = "3.0.1"
+val echopraxiaPlusScalaVersion = "1.3.0"
 
 lazy val root = (project in file("."))
   .settings(
@@ -20,7 +20,9 @@ lazy val root = (project in file("."))
 
     // logger implementation
     libraryDependencies += "com.tersesystems.echopraxia" % "logstash" % echopraxiaVersion,
-    
+    libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.8",
+    libraryDependencies += "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
+
     // specialized field builders and loggers
     libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "nameof" % echopraxiaPlusScalaVersion,
     libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "diff" % echopraxiaPlusScalaVersion,
@@ -30,5 +32,5 @@ lazy val root = (project in file("."))
     libraryDependencies += "com.tersesystems.echopraxia" % "scripting" % echopraxiaVersion,
     libraryDependencies += "com.tersesystems.echopraxia" % "filewatch" % echopraxiaVersion,
 
-    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % Test
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % Test
   )

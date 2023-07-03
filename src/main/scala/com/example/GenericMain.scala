@@ -7,7 +7,7 @@ import com.tersesystems.echopraxia.plusscala.diff._
 
 import java.time.Instant
 
-trait AutoFieldBuilder extends FieldBuilder with AutoDerivation with DiffFieldBuilder
+trait AutoFieldBuilder extends PresentationFieldBuilder with AutoDerivation with DiffFieldBuilder
   with KeyValueCaseClassDerivation
   with OptionValueTypes with EitherValueTypes {
   implicit val instantToValue: ToValue[Instant] = instant => ToValue(instant.toString)
