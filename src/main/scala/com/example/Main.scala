@@ -1,7 +1,6 @@
 package com.example
 
 import com.example.logger._
-import com.example.models._
 
 import java.util.Currency
 
@@ -51,15 +50,18 @@ class Printer extends Logging {
     }
 
     // Render prices in short format in line oriented log format
-    val price = Price(amount = 8.95, currency = Currency.getInstance("USD"))
-    logger.info(price)
+    val price1 = Price(amount = 8.95, currency = Currency.getInstance("USD"))
+    val price2 = Price(amount = 18.95, currency = Currency.getInstance("USD"))
+
+    val prices = Seq(price1, price2)
+    logger.info("prices" -> prices)
 
     // Complex objects are no problem
     val book1 = Book(
-        Category("reference"),
-        Author("Nigel Rees"),
-        Title("Sayings of the Century"),
-      price
+      Category("reference"),
+      Author("Nigel Rees"),
+      Title("Sayings of the Century"),
+      price1
     )
     logger.info(book1)
   }

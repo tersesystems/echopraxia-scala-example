@@ -1,9 +1,9 @@
-package com.example.models
+package com.example
 
 import com.example.logger.LoggingBase
+import com.tersesystems.echopraxia.api.Attributes
 
 import java.util.Currency
-
 
 // Each package can add its own mappings
 trait Logging extends LoggingBase {
@@ -27,8 +27,12 @@ trait Logging extends LoggingBase {
 
   // Render price as $x.xx when using a line oriented format instead of rendering the child fields
   implicit val priceAttributes: ValueAttributes[Price] = (price: Price) => {
-    import com.tersesystems.echopraxia.api.Attributes
     Attributes.create(LoggingBase.withStringFormat(price.toString))
+  }
+
+  // collections of values are a special case :-(
+  implicit val priceSeqAttributes: ValueAttributes[Seq[Price]] = (prices: Seq[Price]) => {
+    Attributes.create(LoggingBase.withSeqStringFormat(prices.map(_.toString)))
   }
 
   implicit val currencyToLog: ToLog[Currency] =

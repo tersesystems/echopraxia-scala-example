@@ -1,4 +1,4 @@
-package com.example.models
+package com.example
 
 import java.text.NumberFormat
 import java.util.Currency

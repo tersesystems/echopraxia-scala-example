@@ -1,9 +1,10 @@
 package com.example.logger
 
-import com.tersesystems.echopraxia.api.{Attribute, Attributes, Field, PresentationField, SimpleFieldVisitor, Value}
+import com.tersesystems.echopraxia.api.{Attribute, Attributes, Field, FieldVisitor, PresentationField, SimpleFieldVisitor, Value}
 import com.tersesystems.echopraxia.plusscala.api.{EitherValueTypes, OptionValueTypes, ValueTypeClasses}
 import com.tersesystems.echopraxia.spi.{EchopraxiaService, FieldCreator, PresentationHintAttributes}
 
+import java.util.concurrent.atomic.{AtomicInteger, LongAdder}
 import scala.language.implicitConversions
 
 // This trait should be extended for domain model classes
@@ -68,6 +69,17 @@ object LoggingBase {
   def withStringFormat(string: String): Attribute[_] = {
     PresentationHintAttributes.withToStringFormat(new SimpleFieldVisitor() {
       override def visit(f: Field): Field = LoggingBase.fieldCreator.create(f.name(), Value.string(string), Attributes.empty())
+    })
+  }
+
+  def withSeqStringFormat(strings: Seq[String]): Attribute[_] = {
+    PresentationHintAttributes.withToStringFormat(new SimpleFieldVisitor() {
+      override def visitArray(): FieldVisitor.ArrayVisitor = new SimpleArrayVisitor() {
+        val counter = new AtomicInteger(0)
+        override def visitElement(value: Value[_]): Unit = {
+          super.visitStringElement(Value.string(strings(counter.getAndAdd(1))))
+        }
+      }
     })
   }
 }
