@@ -3,7 +3,7 @@ package com.example.models
 import java.text.NumberFormat
 import java.util.Currency
 
-case class Book(category: Category, author: Author, title: Title)
+case class Book(category: Category, author: Author, title: Title, price: Price)
 
 case class Price(amount: BigDecimal, currency: Currency) {
   override def toString: String = {

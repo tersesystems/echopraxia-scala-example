@@ -25,7 +25,7 @@ trait Logging extends LoggingBase {
       )
   )
 
-  // Render price as $x.xx when using a line oriented format
+  // Render price as $x.xx when using a line oriented format instead of rendering the child fields
   implicit val priceAttributes: ValueAttributes[Price] = (price: Price) => {
     import com.tersesystems.echopraxia.api.Attributes
     Attributes.create(LoggingBase.withStringFormat(price.toString))
@@ -41,6 +41,7 @@ trait Logging extends LoggingBase {
         book.title,
         book.category,
         book.author,
+        book.price
       )
     }
   )

@@ -19,5 +19,5 @@ lazy val root = (project in file("."))
     libraryDependencies += "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
     libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % Test
   )
-val echopraxiaVersion = "3.1.0"
+val echopraxiaVersion = "3.1.2"
 val echopraxiaPlusScalaVersion = "1.3.0"

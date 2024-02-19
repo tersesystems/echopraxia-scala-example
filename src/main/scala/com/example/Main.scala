@@ -30,7 +30,7 @@ class Printer extends Logging {
     // Options work out of the box
     val optPerson: Option[Person] = Option(person1)
     logger.info("optPerson" -> optPerson)
-    logger.info("optPerson" -> Option[Person](null))
+    logger.info("optPerson" -> None)
 
     // As does either
     val eitherPerson: Either[Person, Person] = Left(person1)
@@ -50,16 +50,17 @@ class Printer extends Logging {
       logger.info.v("p1" -> person1, "p2" -> person2, "p3" -> person1)
     }
 
+    // Render prices in short format in line oriented log format
+    val price = Price(amount = 8.95, currency = Currency.getInstance("USD"))
+    logger.info(price)
+
     // Complex objects are no problem
     val book1 = Book(
         Category("reference"),
         Author("Nigel Rees"),
-        Title("Sayings of the Century")
+        Title("Sayings of the Century"),
+      price
     )
     logger.info(book1)
-
-    // Render prices in short format in line oriented log format
-    val price = Price(amount = 8.95, currency = Currency.getInstance("USD"))
-    logger.info(price)
   }
 }

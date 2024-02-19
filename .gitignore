@@ -7,3 +7,5 @@ target
 
 *.ndjson
 *.log
+
+.uuid
