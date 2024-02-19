@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration debug="false">
+<configuration>
 
-    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+    <shutdownHook class="ch.qos.logback.core.hook.DefaultShutdownHook"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -9,37 +9,39 @@
         </encoder>
     </appender>
 
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <jsonGeneratorDecorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
+            <providers>
+                <timestamp>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <version/>
+                <message/>
+                <loggerName/>
+                <threadName/>
+                <logLevel/>
+                <logLevelValue/><!-- numeric value is useful for filtering >= -->
+                <stackHash/>
+                <!-- <mdc/> --> <!-- not showing mdc as we want to demo withContext() -->
+                <logstashMarkers/>
+                <arguments/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+        <file>application.ndjson</file>
+        <append>false</append>
+    </appender>
+
     <!-- https://github.com/logfellow/logstash-logback-encoder -->
-    <appender name="FILE" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
-        <appender class="ch.qos.logback.core.FileAppender">
-            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
-                <jsonGeneratorDecorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
-                <providers>
-                    <timestamp>
-                        <timeZone>UTC</timeZone>
-                    </timestamp>
-                    <version/>
-                    <message/>
-                    <loggerName/>
-                    <threadName/>
-                    <logLevel/>
-                    <logLevelValue/><!-- numeric value is useful for filtering >= -->
-                    <stackHash/>
-                    <!-- <mdc/> --> <!-- not showing mdc as we want to demo withContext() -->
-                    <logstashMarkers/>
-                    <arguments/>
-                    <stackTrace/>
-                </providers>
-            </encoder>
-            <file>application.ndjson</file>
-            <append>false</append>
-        </appender>
+    <appender name="ASYNCFILE" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
+        <appender-ref ref="ASYNCFILE"/>
     </appender>
 
     <logger name="com.example" level="TRACE"/>
 
     <root level="INFO">
-      <appender-ref ref="CONSOLE" />
-      <appender-ref ref="FILE" />
-  </root>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
 </configuration>
