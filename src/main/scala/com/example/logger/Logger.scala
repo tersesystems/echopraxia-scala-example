@@ -8,6 +8,7 @@ import com.tersesystems.echopraxia.spi.{CoreLogger, CoreLoggerFactory}
 
 import scala.language.implicitConversions
 
+// A very simple logger that can be customized for your app
 class Logger(core: CoreLogger) {
 
   def withCondition(condition: Condition): Logger = new Logger(core.withCondition(condition.asJava))

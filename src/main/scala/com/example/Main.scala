@@ -55,6 +55,7 @@ class Printer extends Logging {
 
     val prices = Seq(price1, price2)
     logger.info("prices" -> prices)
+    logger.info("priceSet" -> Set(price1, price2))
 
     // Complex objects are no problem
     val book1 = Book(
