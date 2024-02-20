@@ -49,12 +49,11 @@ logger.info("people" -> Seq(person1, person2))
 logger.info("people" -> Map("person1" -> person1, "person2" -> person2))
 ```
 
-The logger itself is built on top of the core logger.  It's very simple to extend and customize:
+The logger itself is built on top of the core logger, so it's very simple to extend and customize:
 
 ```scala
 class Logger(core: CoreLogger) {
 
-  // Add extra methods as needed for moar functionality
   def withCondition(condition: Condition): Logger = new Logger(core.withCondition(condition.asJava))
 
   abstract class LoggerMethod(level: Level) {
@@ -63,14 +62,16 @@ class Logger(core: CoreLogger) {
     def apply(message: String): Unit = core.log(level.asJava, message)
     def apply(message: String, f1: => Field): Unit = handle(level, message, f1)
     def apply(message: String, f1: => Field, f2: => Field): Unit = handle(level, message, f1 ++ f2)
+    def apply(message: String, f1: => Field, f2: => Field, f3: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3)
+    def apply(message: String, f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3 ++ f4)
 
-    def apply(message: String, f1: => Field, f2: => Field, f3: => Field): Unit = {
-      handle(level, message, f1 ++ f2 ++ f3)
-    }
+    def apply(f1: => Field): Unit = apply("{}", f1)
+    def apply(f1: => Field, f2: => Field): Unit = apply("{} {}", f1, f2)
+    def apply(f1: => Field, f2: => Field, f3: => Field): Unit = apply("{} {} {}", f1, f2, f3)
+    def apply(f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = apply("{} {} {} {}", f1, f2, f3, f4)
 
-    def apply(message: String, f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = {
-      handle(level, message, f1 ++ f2 ++ f3 ++ f4)
-    }
+    // variadic params don't take call by name  :-(
+    def v(fields: Field*): Unit = handle(level, fields.map(_ => "{}").mkString(" "), list(fields.toArray))
 
     private def handle(level: Level, message: String, f: => FieldBuilderResult): Unit = {
       import scala.compat.java8.FunctionConverters._
@@ -78,31 +79,12 @@ class Logger(core: CoreLogger) {
       val f1: PresentationFieldBuilder => FieldBuilderResult = _ => f
       core.log(level.asJava, message, f1.asJava, PresentationFieldBuilder)
     }
-
-    def apply(f1: => Field): Unit = handle(level, "{}", f1)
-
-    def apply(f1: => Field, f2: => Field): Unit = handle(level, "{} {}", f1 ++ f2)
-
-    def apply(f1: => Field, f2: => Field, f3: => Field): Unit =
-      handle(level, "{} {} {}", f1 ++ f2 ++ f3)
-
-    def apply(f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = {
-      handle(level, "{} {} {} {}", f1 ++ f2 ++ f3 ++ f4)
-    }
-
-    // This will eagerly evaluate all fields, regardless of logger level :-(
-    def v(fields: Field*): Unit =
-      handle(level, fields.map(_ => "{}").mkString(" "), list(fields.toArray))
   }
 
   object info extends LoggerMethod(INFO)
-
   object debug extends LoggerMethod(DEBUG)
-
   object trace extends LoggerMethod(TRACE)
-
   object warn extends LoggerMethod(WARN)
-
   object error extends LoggerMethod(ERROR)
 }
 ```

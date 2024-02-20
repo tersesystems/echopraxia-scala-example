@@ -19,14 +19,16 @@ class Logger(core: CoreLogger) {
     def apply(message: String): Unit = core.log(level.asJava, message)
     def apply(message: String, f1: => Field): Unit = handle(level, message, f1)
     def apply(message: String, f1: => Field, f2: => Field): Unit = handle(level, message, f1 ++ f2)
+    def apply(message: String, f1: => Field, f2: => Field, f3: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3)
+    def apply(message: String, f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3 ++ f4)
 
-    def apply(message: String, f1: => Field, f2: => Field, f3: => Field): Unit = {
-      handle(level, message, f1 ++ f2 ++ f3)
-    }
+    def apply(f1: => Field): Unit = apply("{}", f1)
+    def apply(f1: => Field, f2: => Field): Unit = apply("{} {}", f1, f2)
+    def apply(f1: => Field, f2: => Field, f3: => Field): Unit = apply("{} {} {}", f1, f2, f3)
+    def apply(f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = apply("{} {} {} {}", f1, f2, f3, f4)
 
-    def apply(message: String, f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = {
-      handle(level, message, f1 ++ f2 ++ f3 ++ f4)
-    }
+    // variadic params don't take call by name  :-(
+    def v(fields: Field*): Unit = handle(level, fields.map(_ => "{}").mkString(" "), list(fields.toArray))
 
     private def handle(level: Level, message: String, f: => FieldBuilderResult): Unit = {
       import scala.compat.java8.FunctionConverters._
@@ -34,21 +36,6 @@ class Logger(core: CoreLogger) {
       val f1: PresentationFieldBuilder => FieldBuilderResult = _ => f
       core.log(level.asJava, message, f1.asJava, PresentationFieldBuilder)
     }
-
-    def apply(f1: => Field): Unit = handle(level, "{}", f1)
-
-    def apply(f1: => Field, f2: => Field): Unit = handle(level, "{} {}", f1 ++ f2)
-
-    def apply(f1: => Field, f2: => Field, f3: => Field): Unit =
-      handle(level, "{} {} {}", f1 ++ f2 ++ f3)
-
-    def apply(f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = {
-      handle(level, "{} {} {} {}", f1 ++ f2 ++ f3 ++ f4)
-    }
-
-    // This will eagerly evaluate all fields, regardless of logger level :-(
-    def v(fields: Field*): Unit =
-      handle(level, fields.map(_ => "{}").mkString(" "), list(fields.toArray))
   }
 
   object info extends LoggerMethod(INFO)
