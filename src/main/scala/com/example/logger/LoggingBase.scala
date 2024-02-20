@@ -4,7 +4,8 @@ import com.tersesystems.echopraxia.api._
 import com.tersesystems.echopraxia.plusscala.api.{EitherValueTypes, OptionValueTypes, ValueTypeClasses}
 import com.tersesystems.echopraxia.spi.{EchopraxiaService, FieldConstants, FieldCreator, PresentationHintAttributes}
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util
+import java.util.List
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 
@@ -17,7 +18,7 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   }
 
   object ToName {
-    def apply[T](name: String): ToName[T] = new ToName[T] {
+    def create[T](name: String): ToName[T] = new ToName[T] {
       override def toName: String = name
     }
   }
@@ -29,13 +30,13 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   }
 
   object ToLog {
-    def apply[TF](name: String, tv: ToValue[TF]): ToLog[TF] = new ToLog[TF] {
-      override val toName: ToName[TF] = ToName(name)
+    def create[TF](name: String, tv: ToValue[TF]): ToLog[TF] = new ToLog[TF] {
+      override val toName: ToName[TF] = ToName.create(name)
       override val toValue: ToValue[TF] = tv
     }
 
-    def fromClassName[TF: ClassTag](tv: ToValue[TF]): ToLog[TF] = new ToLog[TF] {
-      override val toName: ToName[TF] = ToName(classTag[TF].runtimeClass.getName)
+    def createFromClass[TF: ClassTag](tv: ToValue[TF]): ToLog[TF] = new ToLog[TF] {
+      override val toName: ToName[TF] = ToName.create(classTag[TF].runtimeClass.getName)
       override val toValue: ToValue[TF] = tv
     }
   }
@@ -66,10 +67,10 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
     keyValue(implicitly[ToName[TV]].toName, value)
 
   // All exceptions should use "exception" field constant by default
-  implicit def throwableToName[T <: Throwable]: ToName[T] = ToName(FieldConstants.EXCEPTION)
+  implicit def throwableToName[T <: Throwable]: ToName[T] = ToName.create(FieldConstants.EXCEPTION)
 
   // turn a Map into a value (this demos how you can manage custom abstract data types)
-  implicit def mapToValue[V: ToValue]: ToValue[Map[String, V]] = { v =>
+  implicit def mapToValue[TV: ToValue](implicit va: ValueAttributes[TV]): ToValue[Map[String, TV]] = { v =>
     val value: Seq[Value.ObjectValue] = v.map { case (k, v) =>
       ToObjectValue(keyValue("key", k), keyValue("value", v))
     }.toSeq
@@ -78,30 +79,17 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
 
   // Creates a field, this is private so it's not exposed to traits that extend this
   private def keyValue[TV: ToValue](name: String, tv: TV)(implicit va: ValueAttributes[TV]): Field = {
-    val value = implicitly[ToValue[TV]].toValue(tv)
-    LoggingBase.fieldCreator.create(name, value, va.attributes(tv))
+    LoggingBase.fieldCreator.create(name, ToValue(tv), va.attributes(tv))
   }
 }
 
 object LoggingBase {
   private val fieldCreator: FieldCreator[PresentationField] = EchopraxiaService.getInstance.getFieldCreator(classOf[PresentationField])
 
-  // Add a custom string format attribute using the passed in string value
-  def withStringFormat(string: String): Attribute[_] = {
-    PresentationHintAttributes.withToStringFormat(new SimpleFieldVisitor() {
-      override def visit(f: Field): Field = LoggingBase.fieldCreator.create(f.name(), Value.string(string), Attributes.empty())
-    })
-  }
-
-  // Adds a custom string format using the passed in strings
-  def withSeqStringFormat(strings: Seq[String]): Attribute[_] = {
-    PresentationHintAttributes.withToStringFormat(new SimpleFieldVisitor() {
-      override def visitArray(): FieldVisitor.ArrayVisitor = new SimpleArrayVisitor() {
-        val counter = new AtomicInteger(0)
-        override def visitElement(value: Value[_]): Unit = {
-          super.visitStringElement(Value.string(strings(counter.getAndAdd(1))))
-        }
-      }
-    })
+  // Add a custom string format attribute using the passed in value
+  def withStringFormat(value: Value[_]): Attributes = {
+    Attributes.create(PresentationHintAttributes.withToStringFormat(new SimpleFieldVisitor() {
+      override def visit(f: Field): Field = Field.keyValue(f.name(), value)
+    }))
   }
 }
