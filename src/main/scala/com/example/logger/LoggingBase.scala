@@ -6,6 +6,7 @@ import com.tersesystems.echopraxia.spi.{EchopraxiaService, FieldConstants, Field
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.language.implicitConversions
+import scala.reflect.{ClassTag, classTag}
 
 // This trait should be extended for domain model classes
 trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValueTypes {
@@ -30,6 +31,11 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   object ToLog {
     def apply[TF](name: String, tv: ToValue[TF]): ToLog[TF] = new ToLog[TF] {
       override val toName: ToName[TF] = ToName(name)
+      override val toValue: ToValue[TF] = tv
+    }
+
+    def fromClassName[TF: ClassTag](tv: ToValue[TF]): ToLog[TF] = new ToLog[TF] {
+      override val toName: ToName[TF] = ToName(classTag[TF].runtimeClass.getName)
       override val toValue: ToValue[TF] = tv
     }
   }
@@ -73,7 +79,7 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   // Creates a field, this is private so it's not exposed to traits that extend this
   private def keyValue[TV: ToValue](name: String, tv: TV)(implicit va: ValueAttributes[TV]): Field = {
     val value = implicitly[ToValue[TV]].toValue(tv)
-    LoggingBase.fieldCreator.create(name, value, va.attributes(tv));
+    LoggingBase.fieldCreator.create(name, value, va.attributes(tv))
   }
 }
 

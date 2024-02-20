@@ -2,7 +2,7 @@ package com.example
 
 import com.example.logger._
 
-import java.util.Currency
+import java.util.{Currency, UUID}
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -65,5 +65,8 @@ class Printer extends Logging {
       price1
     )
     logger.info(book1)
+
+    // Can also log using class name
+    logger.info(UUID.randomUUID)
   }
 }
