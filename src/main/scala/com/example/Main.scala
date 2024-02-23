@@ -58,6 +58,7 @@ class Printer extends Logging {
     logger.info("priceSet" -> Set(price1, price2))
     logger.info("priceMap" -> Map("key1" -> price1))
     logger.info("priceOption" -> Option(price1))
+    logger.info("priceNone" -> Option[Price](null))
 
     // Complex objects are no problem
     val book1 = Book(
@@ -71,4 +72,6 @@ class Printer extends Logging {
     // Can also log using class name
     logger.info(UUID.randomUUID)
   }
+
+  def either(price: Price): Either[Price, Book] = Left(price)
 }

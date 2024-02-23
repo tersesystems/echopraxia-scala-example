@@ -1,11 +1,15 @@
 package com.example.logger
 
+import com.example.Price
+import com.example.logger.LoggingBase.withStringFormat
 import com.tersesystems.echopraxia.api._
 import com.tersesystems.echopraxia.plusscala.api.{EitherValueTypes, OptionValueTypes, ValueTypeClasses}
 import com.tersesystems.echopraxia.spi.{EchopraxiaService, FieldConstants, FieldCreator, PresentationHintAttributes}
 
 import java.util
 import java.util.List
+import scala.jdk.CollectionConverters.SeqHasAsJava
+import scala.jdk.OptionConverters.RichOption
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 
@@ -39,6 +43,15 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
       override val toName: ToName[TF] = ToName.create(classTag[TF].runtimeClass.getName)
       override val toValue: ToValue[TF] = tv
     }
+  }
+
+  // Used for rendering value in message template in conjunction with ValueAttributes
+  trait ToStringValue[T] {
+    def toStringValue(v: T): Value[_]
+  }
+
+  object ToStringValue {
+    def apply[T: ToStringValue](v: T): Value[_] = implicitly[ToStringValue[T]].toStringValue(v)
   }
 
   // Allows custom attributes on fields through implicits
@@ -75,6 +88,33 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
       ToObjectValue(keyValue("key", k), keyValue("value", v))
     }.toSeq
     ToArrayValue(value)
+  }
+
+  // This is the basic case when rendering a toString in line oriented format
+  implicit def valueToStringFormat[TV: ToStringValue]: ValueAttributes[TV] = tv => withStringFormat(ToStringValue(tv))
+
+  // Render an iterable, calling toString for each element
+  implicit def iterableToStringFormat[TV: ToStringValue, T <: Iterable[TV]]: ValueAttributes[T] = (seq: T) =>
+    withStringFormat(Value.array(seq.map(ToStringValue(_)).toSeq.asJava))
+
+  // Render an Option of toString
+  implicit def optionToStringFormat[TV: ToStringValue](implicit va: ValueAttributes[TV]): ValueAttributes[Option[TV]] = {
+    case Some(value) =>
+      va.attributes(value)
+    case None =>
+      withStringFormat {
+        Value.nullValue()
+      }
+  }
+
+  // Render left either as a toString
+  implicit def leftToStringFormat[TVL: ToStringValue](implicit va: ValueAttributes[TVL]): ValueAttributes[Either[TVL, _]] = {
+    case Left(l) => va.attributes(l)
+  }
+
+  // Render right either as a toString
+  implicit def rightToStringFormat[TV: ToStringValue](implicit va: ValueAttributes[TV]): ValueAttributes[Either[_, TV]] = {
+    case Right(r) => va.attributes(r)
   }
 
   // Creates a field, this is private so it's not exposed to traits that extend this
