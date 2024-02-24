@@ -1,15 +1,11 @@
 package com.example.logger
 
-import com.example.Price
-import com.example.logger.LoggingBase.withStringFormat
+import com.example.logger.LoggingBase.{abbreviateAfter, withAttributes, withStringFormat}
 import com.tersesystems.echopraxia.api._
 import com.tersesystems.echopraxia.plusscala.api.{EitherValueTypes, OptionValueTypes, ValueTypeClasses}
 import com.tersesystems.echopraxia.spi.{EchopraxiaService, FieldConstants, FieldCreator, PresentationHintAttributes}
 
-import java.util
-import java.util.List
 import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.jdk.OptionConverters.RichOption
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 
@@ -46,23 +42,65 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   }
 
   // Used for rendering value in message template in conjunction with ValueAttributes
-  trait ToStringValue[T] {
-    def toStringValue(v: T): Value[_]
+  trait ToValueAttribute[T] {
+    def toValue(v: T): Value[_]
+
+    def toAttributes(value: Value[_]): Attributes
   }
 
-  object ToStringValue {
-    def apply[T: ToStringValue](v: T): Value[_] = implicitly[ToStringValue[T]].toStringValue(v)
-  }
+  private trait LowPriorityImplicits {
 
-  // Allows custom attributes on fields through implicits
-  trait ValueAttributes[-A] {
-    def attributes(tv: A): Attributes
-  }
-
-  object ValueAttributes {
     // default low priority implicit that gets applied if nothing is found
-    implicit def empty[TV]: ValueAttributes[TV] = _ => Attributes.empty()
+    implicit def empty[TV]: ToValueAttribute[TV] = new ToValueAttribute[TV] {
+      override def toValue(v: TV): Value[_] = Value.nullValue()
+      override def toAttributes(value: Value[_]): Attributes = Attributes.empty()
+    }
   }
+
+  private object ToValueAttribute extends LowPriorityImplicits {
+
+    implicit def optionValueFormat[TV: ToValueAttribute]: ToValueAttribute[Option[TV]] = new ToValueAttribute[Option[TV]] {
+      override def toValue(v: Option[TV]): Value[_] = v match {
+        case Some(tv) =>
+          val ev = implicitly[ToValueAttribute[TV]]
+          ev.toValue(tv)
+        case None => Value.nullValue()
+      }
+
+      override def toAttributes(value: Value[_]): Attributes = implicitly[ToValueAttribute[TV]].toAttributes(value)
+    }
+
+    //    implicit def eitherToValueAttribute[TVL, TVR, T <: Either[TVL, TVR]](t: T)(implicit left: ToValueAttribute[TVL], right: ToValueAttribute[TVR]): ToValueAttribute[T] = new ToValueAttribute[T] {
+    //      override def toValue(v: T): Value[_] = t match {
+    //        case Left(l) => left.toValue(l.asInstanceOf[TVL])
+    //        case Right(r) => right.toValue(r.asInstanceOf[TVR])
+    //      }
+    //
+    //      override def toAttributes(value: Value[_]): Attributes = t match {
+    //        case Left(l) => left.toAttributes(left.toValue(l.asInstanceOf[TVL]))
+    //        case Right(r) => right.toAttributes(right.toValue(r.asInstanceOf[TVR]))
+    //      }
+    //    }
+  }
+
+  trait ToStringFormat[T] extends ToValueAttribute[T] {
+    override def toAttributes(value: Value[_]): Attributes = withAttributes(withStringFormat(value))
+  }
+
+  object ToStringFormat {
+
+    implicit def iterableValueFormat[TV, T <: Iterable[TV]](implicit tva: ToStringFormat[TV]): ToStringFormat[T] = new ToStringFormat[T]() {
+      override def toValue(seq: T): Value[_] = {
+        val list: Seq[Value[_]] = seq.map(el => tva.toValue(el)).toSeq
+        Value.array(list.asJava)
+      }
+    }
+  }
+
+  trait AbbreviateAfter[T] extends ToValueAttribute[T] {
+    override def toAttributes(value: Value[_]): Attributes = withAttributes(abbreviateAfter(5))
+  }
+
 
   // implicit conversion from a ToLog to a ToValue
   implicit def convertToLogToValue[TL: ToLog]: ToValue[TL] = implicitly[ToLog[TL]].toValue
@@ -72,54 +110,27 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
 
   // Convert a tuple into a field.  This does most of the heavy lifting.
   // i.e logger.info("foo" -> foo) becomes logger.info(Field.keyValue("foo", ToValue(foo)))
-  implicit def tupleToField[TV: ToValue](tuple: (String, TV))(implicit va: ValueAttributes[TV]): Field = keyValue(tuple._1, tuple._2)
+  implicit def tupleToField[TV: ToValue](tuple: (String, TV))(implicit va: ToValueAttribute[TV]): Field = keyValue(tuple._1, tuple._2)
 
   // Convert an object with implicit ToValue and ToName to a field.
   // i.e. logger.info(foo) becomes logger.info(Field.keyValue(ToName[Foo].toName, ToValue(foo)))
-  implicit def nameAndValueToField[TV: ToValue: ToName](value: TV)(implicit va: ValueAttributes[TV]): Field =
+  implicit def nameAndValueToField[TV: ToValue: ToName](value: TV)(implicit va: ToValueAttribute[TV]): Field =
     keyValue(implicitly[ToName[TV]].toName, value)
 
   // All exceptions should use "exception" field constant by default
   implicit def throwableToName[T <: Throwable]: ToName[T] = ToName.create(FieldConstants.EXCEPTION)
 
   // turn a Map into a value (this demos how you can manage custom abstract data types)
-  implicit def mapToValue[TV: ToValue](implicit va: ValueAttributes[TV]): ToValue[Map[String, TV]] = { v =>
+  implicit def mapToValue[TV: ToValue](implicit va: ToValueAttribute[TV]): ToValue[Map[String, TV]] = { v =>
     val value: Seq[Value.ObjectValue] = v.map { case (k, v) =>
       ToObjectValue(keyValue("key", k), keyValue("value", v))
     }.toSeq
     ToArrayValue(value)
   }
 
-  // This is the basic case when rendering a toString in line oriented format
-  implicit def valueToStringFormat[TV: ToStringValue]: ValueAttributes[TV] = tv => withStringFormat(ToStringValue(tv))
-
-  // Render an iterable, calling toString for each element
-  implicit def iterableToStringFormat[TV: ToStringValue, T <: Iterable[TV]]: ValueAttributes[T] = (seq: T) =>
-    withStringFormat(Value.array(seq.map(ToStringValue(_)).toSeq.asJava))
-
-  // Render an Option of toString
-  implicit def optionToStringFormat[TV: ToStringValue](implicit va: ValueAttributes[TV]): ValueAttributes[Option[TV]] = {
-    case Some(value) =>
-      va.attributes(value)
-    case None =>
-      withStringFormat {
-        Value.nullValue()
-      }
-  }
-
-  // Render left either as a toString
-  implicit def leftToStringFormat[TVL: ToStringValue](implicit va: ValueAttributes[TVL]): ValueAttributes[Either[TVL, _]] = {
-    case Left(l) => va.attributes(l)
-  }
-
-  // Render right either as a toString
-  implicit def rightToStringFormat[TV: ToStringValue](implicit va: ValueAttributes[TV]): ValueAttributes[Either[_, TV]] = {
-    case Right(r) => va.attributes(r)
-  }
-
   // Creates a field, this is private so it's not exposed to traits that extend this
-  private def keyValue[TV: ToValue](name: String, tv: TV)(implicit va: ValueAttributes[TV]): Field = {
-    LoggingBase.fieldCreator.create(name, ToValue(tv), va.attributes(tv))
+  private def keyValue[TV: ToValue](name: String, tv: TV)(implicit va: ToValueAttribute[TV]): Field = {
+    LoggingBase.fieldCreator.create(name, ToValue(tv), va.toAttributes(va.toValue(tv)))
   }
 }
 
@@ -127,9 +138,18 @@ object LoggingBase {
   private val fieldCreator: FieldCreator[PresentationField] = EchopraxiaService.getInstance.getFieldCreator(classOf[PresentationField])
 
   // Add a custom string format attribute using the passed in value
-  def withStringFormat(value: Value[_]): Attributes = {
-    Attributes.create(PresentationHintAttributes.withToStringFormat(new SimpleFieldVisitor() {
+  def withAttributes(seq: Attribute[_]*): Attributes = {
+    println(s"withAttributes: $seq")
+    Attributes.create(seq.asJava)
+  }
+
+  def withStringFormat(value: Value[_]): Attribute[_] = {
+    PresentationHintAttributes.withToStringFormat(new SimpleFieldVisitor() {
       override def visit(f: Field): Field = Field.keyValue(f.name(), value)
-    }))
+    })
+  }
+
+  def abbreviateAfter(after: Int): Attribute[_] = {
+    PresentationHintAttributes.abbreviateAfter(after)
   }
 }
