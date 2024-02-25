@@ -45,15 +45,6 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
     }
   }
 
-  // Used for rendering value in message template in conjunction with ValueAttributes
-  trait ToStringValue[T] {
-    def toStringValue(v: T): Value[_]
-  }
-
-  object ToStringValue {
-    def apply[T: ToStringValue](v: T): Value[_] = implicitly[ToStringValue[T]].toStringValue(v)
-  }
-
   // Allows custom attributes on fields through implicits
   trait ToValueAttribute[-T] {
     def toValue(v: T): Value[_]
@@ -82,18 +73,17 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
       override def toAttributes(value: Value[_]): Attributes = implicitly[ToValueAttribute[TV]].toAttributes(value)
     }
 
+    implicit def eitherToValueAttribute[TVL, TVR, T <: Either[TVL, TVR]](t: T)(implicit left: ToValueAttribute[TVL], right: ToValueAttribute[TVR]): ToValueAttribute[T] = new ToValueAttribute[T] {
+      override def toValue(v: T): Value[_] = t match {
+        case Left(l) => left.toValue(l.asInstanceOf[TVL])
+        case Right(r) => right.toValue(r.asInstanceOf[TVR])
+      }
 
-    //    implicit def eitherToValueAttribute[TVL, TVR, T <: Either[TVL, TVR]](t: T)(implicit left: ToValueAttribute[TVL], right: ToValueAttribute[TVR]): ToValueAttribute[T] = new ToValueAttribute[T] {
-    //      override def toValue(v: T): Value[_] = t match {
-    //        case Left(l) => left.toValue(l.asInstanceOf[TVL])
-    //        case Right(r) => right.toValue(r.asInstanceOf[TVR])
-    //      }
-    //
-    //      override def toAttributes(value: Value[_]): Attributes = t match {
-    //        case Left(l) => left.toAttributes(left.toValue(l.asInstanceOf[TVL]))
-    //        case Right(r) => right.toAttributes(right.toValue(r.asInstanceOf[TVR]))
-    //      }
-    //    }
+      override def toAttributes(value: Value[_]): Attributes = t match {
+        case Left(l) => left.toAttributes(left.toValue(l.asInstanceOf[TVL]))
+        case Right(r) => right.toAttributes(right.toValue(r.asInstanceOf[TVR]))
+      }
+    }
 
     // default low priority implicit that gets applied if nothing is found
     implicit def empty[TV]: ToValueAttribute[TV] = new ToValueAttribute[TV] {
@@ -103,15 +93,6 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   }
 
   object ToValueAttribute extends LowPriorityToValueAttributeImplicits
-
-  trait ToStringFormat[T] extends ToValueAttribute[T] {
-    override def toAttributes(value: Value[_]): Attributes = withAttributes(withStringFormat(value))
-  }
-  object ToStringFormat extends LowPriorityToValueAttributeImplicits
-
-  trait AbbreviateAfter[T] extends ToValueAttribute[T] {
-    override def toAttributes(value: Value[_]): Attributes = withAttributes(abbreviateAfter(5))
-  }
 
   // implicit conversion from a ToLog to a ToValue
   implicit def convertToLogToValue[TL: ToLog]: ToValue[TL] = implicitly[ToLog[TL]].toValue

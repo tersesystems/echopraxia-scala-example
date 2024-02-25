@@ -1,7 +1,8 @@
 package com.example
 
 import com.example.logger.LoggingBase
-import com.tersesystems.echopraxia.api.Value
+import com.example.logger.LoggingBase.{abbreviateAfter, withAttributes, withStringFormat}
+import com.tersesystems.echopraxia.api.{Attributes, Value}
 
 import java.util.{Currency, UUID}
 
@@ -25,9 +26,17 @@ trait Logging extends LoggingBase {
   // use the class name as the name here
   implicit val uuidToLog: ToLog[UUID] = ToLog.createFromClass(uuid => ToValue(uuid.toString))
 
+  trait ToStringFormat[T] extends ToValueAttribute[T] {
+    override def toAttributes(value: Value[_]): Attributes = withAttributes(withStringFormat(value))
+  }
+
   // Says we want a toString of $8.95 in a message template for a price
-  implicit val priceToStringValue: ToStringValue[Price] = (price: Price) => Value.string(price.toString)
-  
+  implicit val priceToStringValue: ToStringFormat[Price] = (price: Price) => Value.string(price.toString)
+
+  trait AbbreviateAfter[T] extends ToValueAttribute[T] {
+    override def toAttributes(value: Value[_]): Attributes = withAttributes(abbreviateAfter(5))
+  }
+
   implicit val titleAbbrev: AbbreviateAfter[Title] = new AbbreviateAfter[Title]() {
     override def toValue(v: Title): Value[_] = Value.string(v.raw)
   }
