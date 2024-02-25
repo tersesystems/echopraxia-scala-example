@@ -13,15 +13,11 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
 
   // Provides a default name for a field if not provided
   trait ToName[-T] {
-    // XXX Change this because we want to be able to have the name depend on some
-    // property of the object i.e. if person.admin==true then "admin"
-    def toName: String
+    def toName(t: T): String
   }
 
   object ToName {
-    def create[T](name: String): ToName[T] = new ToName[T] {
-      override def toName: String = name
-    }
+    def create[T](name: String): ToName[T] = _ => name
   }
 
   // Provides easier packaging for ToName and ToValue
@@ -31,14 +27,15 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   }
 
   object ToLog {
-    def create[TF](name: String, tv: ToValue[TF]): ToLog[TF] = new ToLog[TF] {
+
+    def create[TF](name: String, valueFunction: TF => Value[_]): ToLog[TF] = new ToLog[TF] {
       override val toName: ToName[TF] = ToName.create(name)
-      override val toValue: ToValue[TF] = tv
+      override val toValue: ToValue[TF] = t => valueFunction(t)
     }
 
-    def createFromClass[TF: ClassTag](tv: ToValue[TF]): ToLog[TF] = new ToLog[TF] {
+    def createFromClass[TF: ClassTag](valueFunction: TF => Value[_]): ToLog[TF] = new ToLog[TF] {
       override val toName: ToName[TF] = ToName.create(classTag[TF].runtimeClass.getName)
-      override val toValue: ToValue[TF] = tv
+      override val toValue: ToValue[TF] = t => valueFunction(t)
     }
   }
 
@@ -46,7 +43,6 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   trait ToValueAttribute[-T] {
     def toValue(v: T): Value[_]
 
-    // XXX change this to take (v: T, value: Value)
     def toAttributes(value: Value[_]): Attributes
   }
 
@@ -126,7 +122,7 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   // Convert an object with implicit ToValue and ToName to a field.
   // i.e. logger.info(foo) becomes logger.info(Field.keyValue(ToName[Foo].toName, ToValue(foo)))
   implicit def nameAndValueToField[TV: ToValue: ToName](value: TV)(implicit va: ToValueAttribute[TV]): Field =
-    keyValue(implicitly[ToName[TV]].toName, value)
+    keyValue(implicitly[ToName[TV]].toName(value), value)
 
   // All exceptions should use "exception" field constant by default
   implicit def throwableToName[T <: Throwable]: ToName[T] = ToName.create(FieldConstants.EXCEPTION)
