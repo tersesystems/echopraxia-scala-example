@@ -42,22 +42,13 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   }
 
   // Used for rendering value in message template in conjunction with ValueAttributes
-  trait ToValueAttribute[T] {
+  trait ToValueAttribute[-T] {
     def toValue(v: T): Value[_]
 
     def toAttributes(value: Value[_]): Attributes
   }
 
-  private trait LowPriorityImplicits {
-
-    // default low priority implicit that gets applied if nothing is found
-    implicit def empty[TV]: ToValueAttribute[TV] = new ToValueAttribute[TV] {
-      override def toValue(v: TV): Value[_] = Value.nullValue()
-      override def toAttributes(value: Value[_]): Attributes = Attributes.empty()
-    }
-  }
-
-  private object ToValueAttribute extends LowPriorityImplicits {
+  trait LowPriorityImplicits {
 
     implicit def optionValueFormat[TV: ToValueAttribute]: ToValueAttribute[Option[TV]] = new ToValueAttribute[Option[TV]] {
       override def toValue(v: Option[TV]): Value[_] = v match {
@@ -70,6 +61,16 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
       override def toAttributes(value: Value[_]): Attributes = implicitly[ToValueAttribute[TV]].toAttributes(value)
     }
 
+    implicit def iterableValueFormat[TV: ToValueAttribute]: ToValueAttribute[Iterable[TV]] = new ToValueAttribute[Iterable[TV]]() {
+      override def toValue(seq: collection.Iterable[TV]): Value[_] = {
+        val list: Seq[Value[_]] = seq.map(el => implicitly[ToValueAttribute[TV]].toValue(el)).toSeq
+        Value.array(list.asJava)
+      }
+
+      override def toAttributes(value: Value[_]): Attributes = implicitly[ToValueAttribute[TV]].toAttributes(value)
+    }
+
+
     //    implicit def eitherToValueAttribute[TVL, TVR, T <: Either[TVL, TVR]](t: T)(implicit left: ToValueAttribute[TVL], right: ToValueAttribute[TVR]): ToValueAttribute[T] = new ToValueAttribute[T] {
     //      override def toValue(v: T): Value[_] = t match {
     //        case Left(l) => left.toValue(l.asInstanceOf[TVL])
@@ -81,21 +82,21 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
     //        case Right(r) => right.toAttributes(right.toValue(r.asInstanceOf[TVR]))
     //      }
     //    }
+
+    // default low priority implicit that gets applied if nothing is found
+    implicit def empty[TV]: ToValueAttribute[TV] = new ToValueAttribute[TV] {
+      override def toValue(v: TV): Value[_] = Value.nullValue()
+      override def toAttributes(value: Value[_]): Attributes = Attributes.empty()
+    }
   }
+
+  object ToValueAttribute extends LowPriorityImplicits
 
   trait ToStringFormat[T] extends ToValueAttribute[T] {
     override def toAttributes(value: Value[_]): Attributes = withAttributes(withStringFormat(value))
   }
 
-  object ToStringFormat {
-
-    implicit def iterableValueFormat[TV, T <: Iterable[TV]](implicit tva: ToStringFormat[TV]): ToStringFormat[T] = new ToStringFormat[T]() {
-      override def toValue(seq: T): Value[_] = {
-        val list: Seq[Value[_]] = seq.map(el => tva.toValue(el)).toSeq
-        Value.array(list.asJava)
-      }
-    }
-  }
+  object ToStringFormat extends LowPriorityImplicits
 
   trait AbbreviateAfter[T] extends ToValueAttribute[T] {
     override def toAttributes(value: Value[_]): Attributes = withAttributes(abbreviateAfter(5))
@@ -130,6 +131,10 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
 
   // Creates a field, this is private so it's not exposed to traits that extend this
   private def keyValue[TV: ToValue](name: String, tv: TV)(implicit va: ToValueAttribute[TV]): Field = {
+    LoggingBase.fieldCreator.create(name, ToValue(tv), va.toAttributes(va.toValue(tv)))
+  }
+
+  def explicitKeyValue[TV: ToValue](name: String, tv: TV, va: ToValueAttribute[TV]): Field = {
     LoggingBase.fieldCreator.create(name, ToValue(tv), va.toAttributes(va.toValue(tv)))
   }
 }
