@@ -40,4 +40,13 @@ trait Logging extends LoggingBase {
   implicit val titleAbbrev: AbbreviateAfter[Title] = new AbbreviateAfter[Title]() {
     override def toValue(v: Title): Value[_] = Value.string(v.raw)
   }
+
+  // everyone wants different things out of maps, so implementing that
+  // is up to the individual application
+  implicit def mapToValue[TV: ToValue](implicit va: ToValueAttribute[TV]): ToValue[Map[String, TV]] = { v =>
+    val value: Seq[Value.ObjectValue] = v.map { case (k, v) =>
+      ToObjectValue("key" -> k, "value" -> v)
+    }.toSeq
+    ToArrayValue(value)
+  }
 }

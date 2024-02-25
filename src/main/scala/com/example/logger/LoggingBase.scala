@@ -1,15 +1,10 @@
 package com.example.logger
 
-import com.example.Price
-import com.example.logger.LoggingBase.{abbreviateAfter, withAttributes, withStringFormat}
 import com.tersesystems.echopraxia.api._
 import com.tersesystems.echopraxia.plusscala.api.{EitherValueTypes, OptionValueTypes, ValueTypeClasses}
 import com.tersesystems.echopraxia.spi.{EchopraxiaService, FieldConstants, FieldCreator, PresentationHintAttributes}
 
-import java.util
-import java.util.List
 import scala.jdk.CollectionConverters.SeqHasAsJava
-import scala.jdk.OptionConverters.RichOption
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 
@@ -49,6 +44,7 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   trait ToValueAttribute[-T] {
     def toValue(v: T): Value[_]
 
+    // XXX change this to take (v: T, value: Value)
     def toAttributes(value: Value[_]): Attributes
   }
 
@@ -73,15 +69,36 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
       override def toAttributes(value: Value[_]): Attributes = implicitly[ToValueAttribute[TV]].toAttributes(value)
     }
 
-    implicit def eitherToValueAttribute[TVL, TVR, T <: Either[TVL, TVR]](t: T)(implicit left: ToValueAttribute[TVL], right: ToValueAttribute[TVR]): ToValueAttribute[T] = new ToValueAttribute[T] {
-      override def toValue(v: T): Value[_] = t match {
-        case Left(l) => left.toValue(l.asInstanceOf[TVL])
-        case Right(r) => right.toValue(r.asInstanceOf[TVR])
+    implicit def eitherToValueAttribute[TVL: ToValueAttribute, TVR: ToValueAttribute]: ToValueAttribute[Either[TVL, TVR]] = new ToValueAttribute[Either[TVL, TVR]] {
+      // This isn't great, but we need to know whether left or right was picked for the attributes
+      // and if we have a parameter (either: Either[]) in the method signature then it doesn't
+      // pick it up?
+      private var optEither: Option[Either[TVL, TVR]] = None
+
+      override def toValue(v: Either[TVL, TVR]): Value[_] = {
+        this.optEither = Some(v)
+        v match {
+          case Left(l) => implicitly[ToValueAttribute[TVL]].toValue(l)
+          case Right(r) => implicitly[ToValueAttribute[TVR]].toValue(r)
+        }
       }
 
-      override def toAttributes(value: Value[_]): Attributes = t match {
-        case Left(l) => left.toAttributes(left.toValue(l.asInstanceOf[TVL]))
-        case Right(r) => right.toAttributes(right.toValue(r.asInstanceOf[TVR]))
+      override def toAttributes(value: Value[_]): Attributes = {
+        // hack hack hack hack
+        optEither match {
+          case Some(either) =>
+            either match {
+              case Left(_) =>
+                val left = implicitly[ToValueAttribute[TVL]]
+                left.toAttributes(value)
+              case Right(_) =>
+                val right = implicitly[ToValueAttribute[TVR]]
+                right.toAttributes(value)
+            }
+          case None =>
+            // should never get here
+            Attributes.empty()
+        }
       }
     }
 
@@ -112,14 +129,6 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   // All exceptions should use "exception" field constant by default
   implicit def throwableToName[T <: Throwable]: ToName[T] = ToName.create(FieldConstants.EXCEPTION)
 
-  // turn a Map into a value (this demos how you can manage custom abstract data types)
-  implicit def mapToValue[TV: ToValue](implicit va: ToValueAttribute[TV]): ToValue[Map[String, TV]] = { v =>
-    val value: Seq[Value.ObjectValue] = v.map { case (k, v) =>
-      ToObjectValue(keyValue("key", k), keyValue("value", v))
-    }.toSeq
-    ToArrayValue(value)
-  }
-
   // Creates a field, this is private so it's not exposed to traits that extend this
   private def keyValue[TV: ToValue](name: String, tv: TV)(implicit va: ToValueAttribute[TV]): Field = {
     LoggingBase.fieldCreator.create(name, ToValue(tv), va.toAttributes(va.toValue(tv)))
@@ -140,7 +149,13 @@ object LoggingBase {
     })
   }
 
-  def abbreviateAfter(after: Int): Attribute[_] = {
-    PresentationHintAttributes.abbreviateAfter(after)
-  }
+  def withDisplayName(name: String): Attribute[_] = PresentationHintAttributes.withDisplayName(name)
+
+  def abbreviateAfter(after: Int): Attribute[_] = PresentationHintAttributes.abbreviateAfter(after)
+
+  def elided: Attribute[_] = PresentationHintAttributes.asElided()
+
+  def asValueOnly: Attribute[_] = PresentationHintAttributes.asValueOnly()
+
+  def asCardinal: Attribute[_] = PresentationHintAttributes.asCardinal()
 }

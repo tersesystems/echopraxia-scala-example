@@ -1,6 +1,7 @@
 package com.example
 
 import com.example.logger._
+import com.tersesystems.echopraxia.api.Value
 
 import java.util.{Currency, UUID}
 
@@ -32,14 +33,20 @@ class Printer extends Logging {
     logger.info("optPerson" -> None)
 
     // As does either
-    val eitherPerson: Either[Person, Person] = Left(person1)
-    logger.info("eitherPerson" -> eitherPerson)
+    logger.info("eitherPerson" -> Left(person1))
 
     // And so do lists
     logger.info("people" -> Seq(person1, person2))
 
-    // And maps
+    // and maps
     logger.info("people" -> Map("person1" -> person1, "person2" -> person2))
+
+    // Echopraxia takes a bit more work the more heterogeneous the input gets.
+    // For example, to pass through random tuples, you need to map it to an object
+    implicit def tupleToValue[TVK: ToValue, TVV: ToValue](implicit va: ToValueAttribute[Tuple2[TVK, TVV]]): ToValue[Tuple2[TVK, TVV]] = {
+      case (k, v) => ToObjectValue("_1" -> k, "_2" -> v)
+    }
+    logger.info("tuple" -> (1, person1))
 
     // support for exceptions
     logger.error(new IllegalStateException())
@@ -49,29 +56,16 @@ class Printer extends Logging {
       logger.info.v("p1" -> person1, "p2" -> person2, "p3" -> person1)
     }
 
-    // Render prices in short format in line oriented log format
-    val price1 = Price(amount = 8.95, currency = Currency.getInstance("USD"))
-    val price2 = Price(amount = 18.95, currency = Currency.getInstance("USD"))
-
-    val prices = Seq(price1, price2)
-    logger.info("prices" -> prices)
-    logger.info("priceSet" -> Set(price1, price2))
-    logger.info("priceMap" -> Map("key1" -> price1))
-    logger.info("priceOption" -> Option(price1))
-    logger.info("priceNone" -> Option[Price](null))
-
     // Complex objects are no problem
     val book1 = Book(
       Category("reference"),
       Author("Nigel Rees"),
       Title("Sayings of the Century"),
-      price1
+      Price(amount = 8.95, currency = Currency.getInstance("USD"))
     )
     logger.info(book1)
 
     // Can also log using class name
     logger.info(UUID.randomUUID)
   }
-
-  def either(price: Price): Either[Price, Book] = Left(price)
 }
