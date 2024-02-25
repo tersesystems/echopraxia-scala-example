@@ -13,6 +13,8 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
 
   // Provides a default name for a field if not provided
   trait ToName[-T] {
+    // XXX Change this because we want to be able to have the name depend on some
+    // property of the object i.e. if person.admin==true then "admin"
     def toName: String
   }
 
