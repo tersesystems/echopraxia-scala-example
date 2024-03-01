@@ -1,9 +1,11 @@
 package com.example
 
 import com.example.logger._
-import com.tersesystems.echopraxia.api.Value
+import com.tersesystems.echopraxia.api.Field
 
+import java.util
 import java.util.{Currency, UUID}
+import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -64,6 +66,33 @@ class Printer extends Logging {
       Price(amount = 8.95, currency = Currency.getInstance("USD"))
     )
     logger.info(book1)
+
+    // Logging more than four parameters does mean passing a Seq[Field] through,
+    // you can expand the logger API if this is an issue
+    val fields: Seq[Field] = Seq(
+      Category("reference"),
+      Author("Nigel Rees"),
+      Title("Sayings of the Century"),
+      Price(amount = 8.95, currency = Currency.getInstance("USD")),
+      person1 // add more than 4
+    )
+    logger.info(fields)
+
+    // Also this deals with Java lists 
+    val javaList: util.List[Field] = fields.asJava
+    logger.info(javaList)
+
+    // You can also use variadic method but best to wrap it in conditional
+    if (logger.info.enabled) {
+      // not call by name so it gets evaluated eagerly :-(
+      logger.info.v(
+          Category("reference"),
+          Author("Nigel Rees"),
+          Title("Sayings of the Century"),
+          Price(amount = 8.95, currency = Currency.getInstance("USD")),
+          person1 // add more than 4
+      )
+    }
 
     // Can also log using class name
     logger.info(UUID.randomUUID)

@@ -127,6 +127,9 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   // All exceptions should use "exception" field constant by default
   implicit def throwableToName[T <: Throwable]: ToName[T] = ToName.create(FieldConstants.EXCEPTION)
 
+  implicit def iterableFieldToFieldBuilderResult(seq: Seq[Field]): FieldBuilderResult = FieldBuilderResult.list(seq.asJava)
+  implicit def javaListFieldToFieldBuilderResult(list: java.util.List[Field]): FieldBuilderResult = FieldBuilderResult.list(list)
+
   // Creates a field, this is private so it's not exposed to traits that extend this
   private def keyValue[TV: ToValue](name: String, tv: TV)(implicit va: ToValueAttribute[TV]): Field = {
     LoggingBase.fieldCreator.create(name, ToValue(tv), va.toAttributes(va.toValue(tv)))
@@ -134,7 +137,7 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
 }
 
 object LoggingBase {
-  private val fieldCreator: FieldCreator[PresentationField] = EchopraxiaService.getInstance.getFieldCreator(classOf[PresentationField])
+  val fieldCreator: FieldCreator[PresentationField] = EchopraxiaService.getInstance.getFieldCreator(classOf[PresentationField])
 
   def withAttributes(seq: Attribute[_]*): Attributes = {
     Attributes.create(seq.asJava)
