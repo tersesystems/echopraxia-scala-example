@@ -2,12 +2,33 @@ package com.example
 
 import com.example.logger.LoggingBase
 import com.example.logger.LoggingBase.{abbreviateAfter, withAttributes, withStringFormat}
-import com.tersesystems.echopraxia.api.{Attributes, Value}
+import com.tersesystems.echopraxia.api.{Attributes, Field, Value}
 
 import java.util.{Currency, UUID}
+import scala.concurrent.Future
+import scala.reflect.{ClassTag, classTag}
+import scala.util.{Failure, Success}
 
 // Each package can add its own mappings
 trait Logging extends LoggingBase {
+
+  //  format: off
+  // Render futures if we have them
+  implicit def futureToLog[T: ToValue: ClassTag]: ToLog[Future[T]] = new ToLog[Future[T]] {
+    override def toName: ToName[Future[T]] = _ => s"future[${classTag[T].runtimeClass.getName}]"
+
+    override def toValue: ToValue[Future[T]] = f =>
+      f.value match {
+        case Some(value) =>
+          value match {
+            case Failure(exception) => ToObjectValue("completed" -> true, "failure" -> exception)
+            case Success(value) => ToObjectValue("completed" -> true, "success" -> ToValue(value))
+          }
+        case None =>
+          Value.`object`("completed" -> false)
+      }
+  }
+  //  format: on
 
   implicit val personToLog: ToLog[Person] = ToLog.create("person", p => ToObjectValue("firstName" -> p.firstName, "lastName" -> p.lastName))
 

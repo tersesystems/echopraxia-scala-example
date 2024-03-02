@@ -13,7 +13,7 @@ import scala.language.implicitConversions
 class Logger(core: CoreLogger) {
 
   def withFields(fields: => Seq[Field]): Logger = {
-    new Logger(core.withFields(_ => FieldBuilderResult.list(fields.asJava), PresentationFieldBuilder))
+    new Logger(core.withFields((_: PresentationFieldBuilder) => FieldBuilderResult.list(fields.asJava), PresentationFieldBuilder))
   }
 
   def withCondition(condition: Condition): Logger = new Logger(core.withCondition(condition.asJava))
@@ -21,21 +21,17 @@ class Logger(core: CoreLogger) {
   abstract class LoggerMethod(level: Level) {
     def enabled: Boolean = core.isEnabled(level.asJava)
 
-    def apply(message: => String): Unit = core.log(level.asJava, message)
-    def apply(message: => String, f1: => Field): Unit = handle(level, message, f1)
-    def apply(message: => String, f1: => Field, f2: => Field): Unit = handle(level, message, f1 ++ f2)
-    def apply(message: => String, f1: => Field, f2: => Field, f3: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3)
-    def apply(message: => String, f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3 ++ f4)
-    def apply(message: => String, fs: => Seq[Field]): Unit = handle(level, message, FieldBuilderResult.list(fs.asJava))
-    def apply(message: => String, fbr: => FieldBuilderResult): Unit = handle(level, message, fbr)
-
+    def apply(message: String): Unit = core.log(level.asJava, message)
+    def apply(message: String, f1: => FieldBuilderResult): Unit = handle(level, message, f1)
+    def apply(message: String, f1: => FieldBuilderResult, f2: => FieldBuilderResult): Unit = handle(level, message, f1 ++ f2)
+    def apply(message: String, f1: => FieldBuilderResult, f2: => FieldBuilderResult, f3: => FieldBuilderResult): Unit = handle(level, message, f1 ++ f2 ++ f3)
+    def apply(message: String, f1: => FieldBuilderResult, f2: => FieldBuilderResult, f3: => FieldBuilderResult, f4: => FieldBuilderResult): Unit = handle(level, message, f1 ++ f2 ++ f3 ++ f4)
 
     def apply(): Unit = core.log(level.asJava, "")
-    def apply(f1: => Field): Unit = apply("{}", f1)
-    def apply(f1: => Field, f2: => Field): Unit = apply("{} {}", f1, f2)
-    def apply(f1: => Field, f2: => Field, f3: => Field): Unit = apply("{} {} {}", f1, f2, f3)
-    def apply(f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = apply("{} {} {} {}", f1, f2, f3, f4)
-    def apply(fs: => FieldBuilderResult): Unit = apply("{} ".repeat(fs.fields().size()).trim, fs)
+    def apply(f1: => FieldBuilderResult): Unit = apply("{}", f1)
+    def apply(f1: => FieldBuilderResult, f2: => FieldBuilderResult): Unit = apply("{} {}", f1, f2)
+    def apply(f1: => FieldBuilderResult, f2: => FieldBuilderResult, f3: => FieldBuilderResult): Unit = apply("{} {} {}", f1, f2, f3)
+    def apply(f1: => FieldBuilderResult, f2: => FieldBuilderResult, f3: => FieldBuilderResult, f4: => FieldBuilderResult): Unit = apply("{} {} {} {}", f1, f2, f3, f4)
 
 
     // variadic params don't take call by name  :-(

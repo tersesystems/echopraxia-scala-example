@@ -5,6 +5,7 @@ import com.tersesystems.echopraxia.api.Field
 
 import java.util
 import java.util.{Currency, UUID}
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object Main {
@@ -78,7 +79,7 @@ class Printer extends Logging {
     )
     logger.info(fields)
 
-    // Also this deals with Java lists 
+    // Also this deals with Java lists
     val javaList: util.List[Field] = fields.asJava
     logger.info(javaList)
 
@@ -96,5 +97,9 @@ class Printer extends Logging {
 
     // Can also log using class name
     logger.info(UUID.randomUUID)
+
+    // Logging futures is also possible, and can include names
+    logger.info(Future.successful(true))
+    logger.info(Future.successful("String"))
   }
 }
