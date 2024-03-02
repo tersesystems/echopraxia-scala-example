@@ -22,17 +22,16 @@ class Logger(core: CoreLogger) {
     def enabled: Boolean = core.isEnabled(level.asJava)
 
     def apply(message: String): Unit = core.log(level.asJava, message)
-    def apply(message: String, f1: => FieldBuilderResult): Unit = handle(level, message, f1)
-    def apply(message: String, f1: => FieldBuilderResult, f2: => FieldBuilderResult): Unit = handle(level, message, f1 ++ f2)
-    def apply(message: String, f1: => FieldBuilderResult, f2: => FieldBuilderResult, f3: => FieldBuilderResult): Unit = handle(level, message, f1 ++ f2 ++ f3)
-    def apply(message: String, f1: => FieldBuilderResult, f2: => FieldBuilderResult, f3: => FieldBuilderResult, f4: => FieldBuilderResult): Unit = handle(level, message, f1 ++ f2 ++ f3 ++ f4)
+    def apply(message: String, f1: => Field): Unit = handle(level, message, f1)
+    def apply(message: String, f1: => Field, f2: => Field): Unit = handle(level, message, f1 ++ f2)
+    def apply(message: String, f1: => Field, f2: => Field, f3: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3)
+    def apply(message: String, f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3 ++ f4)
 
     def apply(): Unit = core.log(level.asJava, "")
-    def apply(f1: => FieldBuilderResult): Unit = apply("{}", f1)
-    def apply(f1: => FieldBuilderResult, f2: => FieldBuilderResult): Unit = apply("{} {}", f1, f2)
-    def apply(f1: => FieldBuilderResult, f2: => FieldBuilderResult, f3: => FieldBuilderResult): Unit = apply("{} {} {}", f1, f2, f3)
-    def apply(f1: => FieldBuilderResult, f2: => FieldBuilderResult, f3: => FieldBuilderResult, f4: => FieldBuilderResult): Unit = apply("{} {} {} {}", f1, f2, f3, f4)
-
+    def apply(f1: => Field): Unit = apply("{}", f1)
+    def apply(f1: => Field, f2: => Field): Unit = apply("{} {}", f1, f2)
+    def apply(f1: => Field, f2: => Field, f3: => Field): Unit = apply("{} {} {}", f1, f2, f3)
+    def apply(f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = apply("{} {} {} {}", f1, f2, f3, f4)
 
     // variadic params don't take call by name  :-(
     def v(fields: Field*): Unit = handle(level, "{} ".repeat(fields.size).trim, list(fields.toArray))

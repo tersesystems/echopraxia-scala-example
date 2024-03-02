@@ -68,21 +68,6 @@ class Printer extends Logging {
     )
     logger.info(book1)
 
-    // Logging more than four parameters does mean passing a Seq[Field] through,
-    // you can expand the logger API if this is an issue
-    val fields: Seq[Field] = Seq(
-      Category("reference"),
-      Author("Nigel Rees"),
-      Title("Sayings of the Century"),
-      Price(amount = 8.95, currency = Currency.getInstance("USD")),
-      person1 // add more than 4
-    )
-    logger.info(fields)
-
-    // Also this deals with Java lists
-    val javaList: util.List[Field] = fields.asJava
-    logger.info(javaList)
-
     // You can also use variadic method but best to wrap it in conditional
     if (logger.info.enabled) {
       // not call by name so it gets evaluated eagerly :-(
