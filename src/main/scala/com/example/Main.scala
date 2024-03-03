@@ -68,6 +68,13 @@ class Printer extends Logging {
     )
     logger.info(book1)
 
+    // If the array is heterogeneous then you need to use type ascription to make fields
+    // logger.info("bookAndPerson" -> Seq(book1, person1)) won't compile, but below will:
+    logger.info("bookAndPerson" -> Seq(book1: Field, person1: Field))
+
+    // You can also use "withFields" to render JSON on every message (this will not show in line format)
+    logger.withFields(Seq(book1: Field, person1: Field)).info("testing")
+
     // You can also use variadic method but best to wrap it in conditional
     if (logger.info.enabled) {
       // not call by name so it gets evaluated eagerly :-(

@@ -4,6 +4,7 @@ import com.tersesystems.echopraxia.api._
 import com.tersesystems.echopraxia.plusscala.api.{EitherValueTypes, OptionValueTypes, ValueTypeClasses}
 import com.tersesystems.echopraxia.spi.{EchopraxiaService, FieldConstants, FieldCreator, PresentationHintAttributes}
 
+import java.util
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
@@ -115,6 +116,9 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   // implicit conversion from a ToLog to a ToName
   implicit def convertToLogToName[TL: ToLog]: ToName[TL] = implicitly[ToLog[TL]].toName
 
+  // XXX This should already be out of the box, why doesn't this work?
+  implicit val fieldsToArrayValue: ToArrayValue[Seq[Field]] = (t: Seq[Field]) => ToArrayValue(t)
+
   // Convert a tuple into a field.  This does most of the heavy lifting.
   // i.e logger.info("foo" -> foo) becomes logger.info(Field.keyValue("foo", ToValue(foo)))
   implicit def tupleToField[TV: ToValue](tuple: (String, TV))(implicit va: ToValueAttribute[TV]): Field = keyValue(tuple._1, tuple._2)
@@ -126,9 +130,6 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
 
   // All exceptions should use "exception" field constant by default
   implicit def throwableToName[T <: Throwable]: ToName[T] = ToName.create(FieldConstants.EXCEPTION)
-
-  implicit def iterableFieldToFieldBuilderResult(seq: Seq[Field]): FieldBuilderResult = FieldBuilderResult.list(seq.asJava)
-  implicit def javaListFieldToFieldBuilderResult(list: java.util.List[Field]): FieldBuilderResult = FieldBuilderResult.list(list)
 
   // Creates a field, this is private so it's not exposed to traits that extend this
   private def keyValue[TV: ToValue](name: String, tv: TV)(implicit va: ToValueAttribute[TV]): Field = {
