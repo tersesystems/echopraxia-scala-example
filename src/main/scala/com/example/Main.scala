@@ -1,7 +1,7 @@
 package com.example
 
 import com.example.logger._
-import com.tersesystems.echopraxia.api.Field
+import com.tersesystems.echopraxia.api.{Field, Value}
 
 import java.util
 import java.util.{Currency, UUID}
@@ -68,12 +68,16 @@ class Printer extends Logging {
     )
     logger.info(book1)
 
-    // If the array is heterogeneous then you need to use type ascription to make fields
-    // logger.info("bookAndPerson" -> Seq(book1, person1)) won't compile, but below will:
-    logger.info("bookAndPerson" -> Seq(book1: Field, person1: Field))
+    // You can also use ToObjectValue to specify field properties
+    logger.info("bookAndPerson" -> ToObjectValue(book1, person1))
+    // If you have a heterogeneous array you can use ToArrayValue to map fields
+    logger.info("bookAndPerson" -> ToArrayValue(Seq[Field](book1, person1)))
+
+    // likewise for values you'll want to specify Seq[Value[_]] to give implicit conversion some clues
+    logger.info("oneTrueString" -> Seq(ToValue(1), ToValue(true), ToValue("string")))
 
     // You can also use "withFields" to render JSON on every message (this will not show in line format)
-    logger.withFields(Seq(book1: Field, person1: Field)).info("testing")
+    logger.withFields(Seq(book1, person1)).info("testing")
 
     // You can also use variadic method but best to wrap it in conditional
     if (logger.info.enabled) {

@@ -116,9 +116,6 @@ trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValu
   // implicit conversion from a ToLog to a ToName
   implicit def convertToLogToName[TL: ToLog]: ToName[TL] = implicitly[ToLog[TL]].toName
 
-  // XXX This should already be out of the box, why doesn't this work?
-  implicit val fieldsToArrayValue: ToArrayValue[Seq[Field]] = (t: Seq[Field]) => ToArrayValue(t)
-
   // Convert a tuple into a field.  This does most of the heavy lifting.
   // i.e logger.info("foo" -> foo) becomes logger.info(Field.keyValue("foo", ToValue(foo)))
   implicit def tupleToField[TV: ToValue](tuple: (String, TV))(implicit va: ToValueAttribute[TV]): Field = keyValue(tuple._1, tuple._2)
