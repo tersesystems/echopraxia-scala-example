@@ -1,12 +1,10 @@
 package com.example
 
 import com.example.logger._
-import com.tersesystems.echopraxia.api.{Field, Value}
+import com.tersesystems.echopraxia.api.Field
 
-import java.util
 import java.util.{Currency, UUID}
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.SeqHasAsJava
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -68,10 +66,17 @@ class Printer extends Logging {
     )
     logger.info(book1)
 
-    // You can also use ToObjectValue to specify field properties
-    logger.info("bookAndPerson" -> ToObjectValue(book1, person1))
-    // If you have a heterogeneous array you can use ToArrayValue to map fields
-    logger.info("bookAndPerson" -> ToArrayValue(Seq[Field](book1, person1)))
+    // If you want to render fields as an object, you can import iterableToObjectValue
+    if (logger.info.enabled) {
+      import ToObjectValue.iterableToObjectValue
+      logger.info("object" -> Seq[Field](book1, person1)) // object={book={}, person={}}
+    }
+
+    // If you want to render fields as an array, you can import iterableToObjectValue
+    if (logger.info.enabled) {
+      import ToArrayValue.iterableToArrayValue
+      logger.info("object" -> Seq[Field](book1, person1)) // object=[book={}, person={}]
+    }
 
     // likewise for values you'll want to specify Seq[Value[_]] to give implicit conversion some clues
     logger.info("oneTrueString" -> Seq(ToValue(1), ToValue(true), ToValue("string")))
