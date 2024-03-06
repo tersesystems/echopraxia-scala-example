@@ -55,6 +55,24 @@ class IterableSpec extends AnyWordSpec with Matchers with LoggingBase {
       val field: Field = "test" -> Set(instant1, instant2)
       field.toString must be("test=[1970-01-01T00:00:00Z, 1970-01-01T00:16:40Z]")
     }
+
+    "work with fields using ToArrayValue" in {
+      val instant1 = Instant.ofEpochMilli(0)
+      val instant2 = Instant.ofEpochMilli(1000000)
+
+      val fields = Seq[Field]("instant1" -> instant1, "instant2" -> instant2)
+      val field: Field = "test" -> ToArrayValue(fields)
+      field.toString must be("test=[{instant1=1970-01-01T00:00:00Z}, {instant2=1970-01-01T00:16:40Z}]")
+    }
+
+    "work with fields with just plain fields" in {
+      val instant1 = Instant.ofEpochMilli(0)
+      val instant2 = Instant.ofEpochMilli(1000000)
+
+      val fields = Seq[Field]("instant1" -> instant1, "instant2" -> instant2)
+      val field: Field = "test" -> fields
+      field.toString must be("test=[{instant1=1970-01-01T00:00:00Z}, {instant2=1970-01-01T00:16:40Z}]")
+    }
   }
 
 }
