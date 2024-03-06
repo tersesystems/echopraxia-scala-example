@@ -33,11 +33,6 @@
         <append>false</append>
     </appender>
 
-    <!-- https://github.com/logfellow/logstash-logback-encoder -->
-    <appender name="ASYNCFILE" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
-        <appender-ref ref="ASYNCFILE"/>
-    </appender>
-
     <logger name="com.example" level="TRACE"/>
 
     <root level="INFO">
