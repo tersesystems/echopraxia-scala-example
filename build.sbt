@@ -1,12 +1,12 @@
-ThisBuild / version := "1.3.0"
+ThisBuild / version := "1.3.1-SNAPSHOT"
 
 ThisBuild / scalaVersion := "2.13.10"
 
-ThisBuild / resolvers += Resolver.mavenLocal
-ThisBuild / resolvers += Resolver.defaultLocal
+//ThisBuild / resolvers += Resolver.mavenLocal
+//ThisBuild / resolvers += Resolver.defaultLocal
 
 val echopraxiaVersion = "3.1.2"
-val echopraxiaPlusScalaVersion = "1.3.0"
+val echopraxiaPlusScalaVersion = "1.3.1-SNAPSHOT"
 
 lazy val root = (project in file("."))
   .settings(
@@ -14,7 +14,8 @@ lazy val root = (project in file("."))
 
     // different styles of logger
     libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "api" % echopraxiaPlusScalaVersion,
-    // libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "generic" % echopraxiaPlusScalaVersion,
+    libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "field-logger" % echopraxiaPlusScalaVersion,
+    //libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "generic" % echopraxiaPlusScalaVersion,
 
     // logger implementation
     libraryDependencies += "com.tersesystems.echopraxia" % "logstash" % echopraxiaVersion,

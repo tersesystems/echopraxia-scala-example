@@ -1,7 +1,8 @@
 package com.example
 
-import com.example.logger._
 import com.tersesystems.echopraxia.api.{Field, Value}
+import com.tersesystems.echopraxia.plusscala.api.ToValueAttributes
+import com.tersesystems.echopraxia.plusscala.fieldlogger._
 
 import java.util.{Currency, UUID}
 import scala.concurrent.Future
@@ -44,7 +45,7 @@ class Printer extends Logging {
 
     // Echopraxia takes a bit more work the more heterogeneous the input gets.
     // For example, to pass through random tuples, you need to map it to an object
-    implicit def tupleToValue[TVK: ToValue, TVV: ToValue](implicit va: ToValueAttribute[Tuple2[TVK, TVV]]): ToValue[Tuple2[TVK, TVV]] = {
+    implicit def tupleToValue[TVK: ToValue, TVV: ToValue](implicit va: ToValueAttributes[Tuple2[TVK, TVV]]): ToValue[Tuple2[TVK, TVV]] = {
       case (k, v) => ToObjectValue("_1" -> k, "_2" -> v)
     }
     logger.info("tuple" -> (1, person1))

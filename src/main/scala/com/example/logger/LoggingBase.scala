@@ -4,7 +4,6 @@ import com.tersesystems.echopraxia.api._
 import com.tersesystems.echopraxia.plusscala.api.{EitherValueTypes, OptionValueTypes, ValueTypeClasses}
 import com.tersesystems.echopraxia.spi.{EchopraxiaService, FieldConstants, FieldCreator, PresentationHintAttributes}
 
-import java.util
 import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
@@ -12,8 +11,8 @@ import scala.reflect.{ClassTag, classTag}
 // This trait should be extended for domain model classes
 trait LoggingBase extends ValueTypeClasses with OptionValueTypes with EitherValueTypes {
 
-
   // XXX This should be something the framework does for us
+  // need this for logger.info("object" -> Seq[Field](book1, person1)) // object=[book={}, person={}]
   implicit def iterableToArrayValue[V: ToValue]: ToArrayValue[Iterable[V]] = ToArrayValue.iterableToArrayValue[V]
 
   // Provides a default name for a field if not provided
