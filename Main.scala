@@ -5,7 +5,7 @@
 //> using dep "com.tersesystems.echopraxia.plusscala::field-logger:1.3.1-SNAPSHOT"
 //> using dep "com.tersesystems.echopraxia.plusscala::generic:1.3.1-SNAPSHOT"
 //> using dep "com.tersesystems.echopraxia:logstash:3.1.2"
-//> using dep "ch.qos.logback:logback-classic:1.5.2"
+//> using dep "ch.qos.logback:logback-classic:1.5.3"
 //> using dep "net.logstash.logback:logstash-logback-encoder:7.4"
 
 import com.tersesystems.echopraxia.api.Field
