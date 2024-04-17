@@ -1,46 +1,35 @@
 package com.example
 
-import com.tersesystems.echopraxia.api.Value
-
 import com.tersesystems.echopraxia.plusscala.api._
 
+import scala.concurrent.Future
 import java.util.{Currency, UUID}
+import scala.reflect.{ClassTag, classTag}
 
 // Each package can add its own mappings
-trait Logging extends LoggingBase with FutureValueTypes {
-  implicit def iterableToArrayValue[V: ToValue]: ToArrayValue[Iterable[V]] = ToArrayValue.iterableToArrayValue[V]
+trait Logging extends LoggingBase with FutureValueTypes with HeterogeneousFieldSupport {
+  implicit def futureToName[TV: ToValue: ClassTag]: ToName[Future[TV]] = _ => s"future[${classTag[TV].runtimeClass.getName}]"
 
-  // everyone wants different things out of maps, so implementing that
-  // is up to the individual application
-  implicit def mapToValue[TV: ToValue](implicit va: ToValueAttributes[TV]): ToValue[Map[String, TV]] = { v =>
-    val value: Seq[Value.ObjectValue] = v.map { case (k, v) =>
-      ToObjectValue("key" -> k, "value" -> v)
-    }.toSeq
-    ToArrayValue(value)
+  // Echopraxia takes a bit more work the more heterogeneous the input gets.
+  // For example, to pass through random tuples, you need to map it to an object
+  implicit def tupleToValue[TVK: ToValue, TVV: ToValue]: ToValue[Tuple2[TVK, TVV]] = {
+    case (k, v) => ToObjectValue("key" -> k, "value" -> v)
   }
 
-  implicit val personToLog: ToLog[Person] = ToLog.create("person", p => ToObjectValue("firstName" -> p.firstName, "lastName" -> p.lastName))
+  implicit val personToField: ToField[Person] = ToField(_ => "person", p => ToObjectValue("firstName" -> p.firstName, "lastName" -> p.lastName))
 
-  implicit val titleToLog: ToLog[Title] = ToLog.create("title", t => ToValue(t.raw))
+  implicit val titleToField: ToField[Title] = ToField(_ => "title", t => ToValue(t.raw).asString().abbreviateAfter(5))
 
-  implicit val authorToLog: ToLog[Author] = ToLog.create("author", a => ToValue(a.raw))
+  implicit val authorToField: ToField[Author] = ToField(_ => "author", a => ToValue(a.raw))
 
-  implicit val categoryToLog: ToLog[Category] = ToLog.create("category", c => ToValue(c.raw))
+  implicit val categoryToField: ToField[Category] = ToField(_ => "category", c => ToValue(c.raw))
 
-  implicit val currencyToLog: ToLog[Currency] = ToLog.create("currency", currency => ToValue(currency.getCurrencyCode))
-
-  implicit val priceToLog: ToLog[Price] = ToLog.create("price", price => ToObjectValue(price.currency, "amount" -> price.amount))
-
-  implicit val bookToLog: ToLog[Book] = ToLog.create("book", book => ToObjectValue(book.title, book.category, book.author, book.price))
-
-  implicit val uuidToLog: ToLog[UUID] = ToLog.create("uuid", uuid => ToValue(uuid.toString))
+  implicit val currencyToField: ToField[Currency] = ToField(_ => "currency", currency => ToValue(currency.getCurrencyCode))
 
   // Says we want a toString of $8.95 in a message template for a price
-  implicit val priceToStringValue: ToStringFormat[Price] = (price: Price) => Value.string(price.toString)
+  implicit val priceToField: ToField[Price] = ToField(_ => "price", price => ToObjectValue(price.currency, "amount" -> price.amount).withToStringValue(price.toString))
 
-  implicit val titleAbbrev: AbbreviateAfter[Title] = new AbbreviateAfter[Title]() {
-    val after = 5
-    override def toValue(v: Title): Value[_] = Value.string(v.raw)
-  }
+  implicit val bookToField: ToField[Book] = ToField(_ => "book", book => ToObjectValue(book.title, book.category, book.author, book.price))
 
+  implicit val uuidToField: ToField[UUID] = ToField(_ => "uuid", uuid => ToValue(uuid.toString))
 }

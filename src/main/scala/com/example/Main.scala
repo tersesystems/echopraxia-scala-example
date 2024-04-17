@@ -1,8 +1,7 @@
 package com.example
 
-import com.tersesystems.echopraxia.api.{Field, Value}
-import com.tersesystems.echopraxia.plusscala.api.ToValueAttributes
-import com.tersesystems.echopraxia.plusscala.fieldlogger._
+import com.tersesystems.echopraxia.api.Field
+import com.tersesystems.echopraxia.plusscala._
 
 import java.util.{Currency, UUID}
 import scala.concurrent.Future
@@ -15,7 +14,7 @@ object Main {
 }
 
 class Printer extends Logging {
-  private val logger: Logger = LoggerFactory.getLogger(getClass)
+  private val logger = LoggerFactory.getLogger(getClass)
 
   def print(): Unit = {
     val person1 = Person("Person1", "Last Name")
@@ -40,22 +39,17 @@ class Printer extends Logging {
     // And so do lists
     logger.info("people" -> Seq(person1, person2))
 
-    // and maps
+    // and maps (with a little work to set up what you want the field names to be)
     logger.info("people" -> Map("person1" -> person1, "person2" -> person2))
 
-    // Echopraxia takes a bit more work the more heterogeneous the input gets.
-    // For example, to pass through random tuples, you need to map it to an object
-    implicit def tupleToValue[TVK: ToValue, TVV: ToValue](implicit va: ToValueAttributes[Tuple2[TVK, TVV]]): ToValue[Tuple2[TVK, TVV]] = {
-      case (k, v) => ToObjectValue("_1" -> k, "_2" -> v)
-    }
+    // and tuples
     logger.info("tuple" -> (1, person1))
 
     // support for exceptions
     logger.error(new IllegalStateException())
-    if (logger.info.enabled) {
-      // this will take any number of fields but is less efficient
-      // as it is not call-by-name
-      logger.info.v("p1" -> person1, "p2" -> person2, "p3" -> person1)
+
+    if (logger.isInfoEnabled) {
+      logger.info("p1" -> person1, "p2" -> person2, "p3" -> person1)
     }
 
     // Complex objects are no problem
@@ -77,12 +71,10 @@ class Printer extends Logging {
     logger.info("oneTrueString" -> Seq(ToValue(1), ToValue(true), ToValue("string")))
 
     // You can also use "withFields" to render JSON on every message (this will not show in line format)
-    logger.withFields(Seq(book1, person1)).info("testing")
+    logger.withFields(Seq[Field](book1, person1)).info("testing")
 
-    // You can also use variadic method but best to wrap it in conditional
-    if (logger.info.enabled) {
-      // not call by name so it gets evaluated eagerly :-(
-      logger.info.v(
+    if (logger.isInfoEnabled) {
+      logger.info(
           Category("reference"),
           Author("Nigel Rees"),
           Title("Sayings of the Century"),

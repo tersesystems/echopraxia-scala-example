@@ -5,19 +5,34 @@ This is a demonstration project that shows the [Scala API for Echopraxia](https:
 The code base is set up so that the domain models used all have a mapping that sets up the names and values used in logging 
 
 ```scala
-trait Logging extends LoggingBase {
+trait Logging extends LoggingBase with FutureValueTypes with HeterogeneousFieldSupport {
+  implicit def futureToName[TV: ToValue: ClassTag]: ToName[Future[TV]] = _ => s"future[${classTag[TV].runtimeClass.getName}]"
 
-  implicit val personToLog: ToLog[Person] = 
-    ToLog("person", p => ToObjectValue("firstName" -> p.firstName, "lastName" -> p.lastName))
-  
-  implicit val bookToLog: ToLog[Book] = 
-    ToLog("book", book => ToObjectValue(book.title, book.category, book.author, book.price))
+  // everyone wants different things out of maps, so implementing that
+  // is up to the individual application
+  implicit def mapToValue[TV: ToValue]: ToValue[Map[String, TV]] = { v =>
+    val value: Seq[Value.ObjectValue] = v.map { case (k, v) =>
+      ToObjectValue("key" -> k, "value" -> v)
+    }.toSeq
+    ToArrayValue(value)
+  }
 
-  implicit val uuidToLog: ToLog[UUID] = 
-    ToLog.fromClassName(uuid => ToValue(uuid.toString))
+  implicit val personToField: ToField[Person] = ToField(_ => "person", p => ToObjectValue("firstName" -> p.firstName, "lastName" -> p.lastName))
 
-  // Render price as $x.xx when using a line oriented format instead of rendering the child fields
-  implicit val priceAttributes: ValueAttributes[Price] = (price: Price) => Attributes.create(withStringFormat(price.toString))
+  implicit val titleToField: ToField[Title] = ToField(_ => "title", t => ToValue(t.raw).asString().abbreviateAfter(5))
+
+  implicit val authorToField: ToField[Author] = ToField(_ => "author", a => ToValue(a.raw))
+
+  implicit val categoryToField: ToField[Category] = ToField(_ => "category", c => ToValue(c.raw))
+
+  implicit val currencyToField: ToField[Currency] = ToField(_ => "currency", currency => ToValue(currency.getCurrencyCode))
+
+  // Says we want a toString of $8.95 in a message template for a price
+  implicit val priceToField: ToField[Price] = ToField(_ => "price", price => ToObjectValue(price.currency, "amount" -> price.amount).withToStringValue(price.toString))
+
+  implicit val bookToField: ToField[Book] = ToField(_ => "book", book => ToObjectValue(book.title, book.category, book.author, book.price))
+
+  implicit val uuidToField: ToField[UUID] = ToField(_ => "uuid", uuid => ToValue(uuid.toString))
 }
 ```
 
@@ -47,46 +62,11 @@ logger.info("people" -> Seq(person1, person2))
 
 // And maps
 logger.info("people" -> Map("person1" -> person1, "person2" -> person2))
+
+// You can also use "withFields" to render JSON on every message (this will not show in line format)
+logger.withFields(Seq[Field](book1, person1)).info("testing")
 ```
 
 The logger itself is built on top of the core logger, so it's very simple to extend and customize:
-
-```scala
-class Logger(core: CoreLogger) {
-
-  def withCondition(condition: Condition): Logger = new Logger(core.withCondition(condition.asJava))
-
-  abstract class LoggerMethod(level: Level) {
-    def enabled: Boolean = core.isEnabled(level.asJava)
-
-    def apply(message: String): Unit = core.log(level.asJava, message)
-    def apply(message: String, f1: => Field): Unit = handle(level, message, f1)
-    def apply(message: String, f1: => Field, f2: => Field): Unit = handle(level, message, f1 ++ f2)
-    def apply(message: String, f1: => Field, f2: => Field, f3: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3)
-    def apply(message: String, f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = handle(level, message, f1 ++ f2 ++ f3 ++ f4)
-
-    def apply(f1: => Field): Unit = apply("{}", f1)
-    def apply(f1: => Field, f2: => Field): Unit = apply("{} {}", f1, f2)
-    def apply(f1: => Field, f2: => Field, f3: => Field): Unit = apply("{} {} {}", f1, f2, f3)
-    def apply(f1: => Field, f2: => Field, f3: => Field, f4: => Field): Unit = apply("{} {} {} {}", f1, f2, f3, f4)
-
-    // variadic params don't take call by name  :-(
-    def v(fields: Field*): Unit = handle(level, fields.map(_ => "{}").mkString(" "), list(fields.toArray))
-
-    private def handle(level: Level, message: String, f: => FieldBuilderResult): Unit = {
-      import scala.compat.java8.FunctionConverters._
-
-      val f1: PresentationFieldBuilder => FieldBuilderResult = _ => f
-      core.log(level.asJava, message, f1.asJava, PresentationFieldBuilder)
-    }
-  }
-
-  object info extends LoggerMethod(INFO)
-  object debug extends LoggerMethod(DEBUG)
-  object trace extends LoggerMethod(TRACE)
-  object warn extends LoggerMethod(WARN)
-  object error extends LoggerMethod(ERROR)
-}
-```
 
 And the technical details are in `LoggerBase`, essentially some type classes and implicit conversions for the logger.
