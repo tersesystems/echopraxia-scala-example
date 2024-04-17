@@ -6,16 +6,13 @@ ThisBuild / scalaVersion := "2.13.10"
 //ThisBuild / resolvers += Resolver.defaultLocal
 
 val echopraxiaVersion = "3.2.0-RC1"
-val echopraxiaPlusScalaVersion = "1.4.0-SNAPSHOT"
+val echopraxiaPlusScalaVersion = "1.4.0-RC1"
 
 lazy val root = (project in file("."))
   .settings(
     name := "echopraxia-scala-example",
-
-    // different styles of logger
-    libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "api" % echopraxiaPlusScalaVersion,
     libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "logger" % echopraxiaPlusScalaVersion,
-    //libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "generic" % echopraxiaPlusScalaVersion,
+    libraryDependencies += "com.tersesystems.echopraxia.plusscala" %% "generic" % echopraxiaPlusScalaVersion,
 
     // logger implementation
     libraryDependencies += "com.tersesystems.echopraxia" % "logstash" % echopraxiaVersion,

@@ -1,13 +1,14 @@
 package com.example
 
 import com.tersesystems.echopraxia.plusscala.api._
+import com.tersesystems.echopraxia.plusscala.generic._
 
 import scala.concurrent.Future
 import java.util.{Currency, UUID}
 import scala.reflect.{ClassTag, classTag}
 
 // Each package can add its own mappings
-trait Logging extends LoggingBase with FutureValueTypes with HeterogeneousFieldSupport {
+trait Logging extends LoggingBase with FutureValueTypes with HeterogeneousFieldSupport with SemiAutoDerivation {
   implicit def futureToName[TV: ToValue: ClassTag]: ToName[Future[TV]] = _ => s"future[${classTag[TV].runtimeClass.getName}]"
 
   // Echopraxia takes a bit more work the more heterogeneous the input gets.
@@ -29,7 +30,10 @@ trait Logging extends LoggingBase with FutureValueTypes with HeterogeneousFieldS
   // Says we want a toString of $8.95 in a message template for a price
   implicit val priceToField: ToField[Price] = ToField(_ => "price", price => ToObjectValue(price.currency, "amount" -> price.amount).withToStringValue(price.toString))
 
-  implicit val bookToField: ToField[Book] = ToField(_ => "book", book => ToObjectValue(book.title, book.category, book.author, book.price))
+  // For case classes, we can use macros to generate mappings for us
+  //implicit val bookToField: ToField[Book] = ToField(_ => "book", book => ToObjectValue(book.title, book.category, book.author, book.price))
+  implicit val bookToName: ToName[Book] = _ => "book"
+  implicit val bookToValue: ToValue[Book] = gen[Book]
 
   implicit val uuidToField: ToField[UUID] = ToField(_ => "uuid", uuid => ToValue(uuid.toString))
 }
