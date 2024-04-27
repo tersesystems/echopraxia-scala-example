@@ -8,12 +8,12 @@ import java.util.{Currency, UUID}
 import scala.reflect.{ClassTag, classTag}
 
 // Each package can add its own mappings
-trait Logging extends LoggingBase with FutureValueTypes with HeterogeneousFieldSupport with SemiAutoDerivation {
+trait Logging extends LoggingBase with HeterogeneousFieldSupport with SemiAutoDerivation {
   implicit def futureToName[TV: ToValue: ClassTag]: ToName[Future[TV]] = _ => s"future[${classTag[TV].runtimeClass.getName}]"
 
   // Echopraxia takes a bit more work the more heterogeneous the input gets.
   // For example, to pass through random tuples, you need to map it to an object
-  implicit def tupleToValue[TVK: ToValue, TVV: ToValue]: ToValue[Tuple2[TVK, TVV]] = {
+  implicit def tupleToValue[TVK: ToValue, TVV: ToValue]: ToValue[(TVK, TVV)] = {
     case (k, v) => ToObjectValue("key" -> k, "value" -> v)
   }
 

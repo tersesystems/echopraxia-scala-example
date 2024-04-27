@@ -1,4 +1,4 @@
-ThisBuild / version := "1.3.0"
+ThisBuild / version := "1.4.0"
 
 ThisBuild / scalaVersion := "3.4.1"
 
@@ -6,7 +6,7 @@ ThisBuild / scalaVersion := "3.4.1"
 //ThisBuild / resolvers += Resolver.defaultLocal
 
 val echopraxiaVersion = "3.2.0"
-val echopraxiaPlusScalaVersion = "1.4.0-RC1"
+val echopraxiaPlusScalaVersion = "1.4.0"
 
 lazy val root = (project in file("."))
   .settings(
@@ -16,7 +16,7 @@ lazy val root = (project in file("."))
 
     // logger implementation
     libraryDependencies += "com.tersesystems.echopraxia" % "logstash" % echopraxiaVersion,
-    libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.2",
+    libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.6",
     libraryDependencies += "net.logstash.logback" % "logstash-logback-encoder" % "7.4",
-    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.17" % Test
+    libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.18" % Test
   )
