@@ -1,7 +1,7 @@
 package com.example
 
-import com.tersesystems.echopraxia.api.Field
-import com.tersesystems.echopraxia.plusscala._
+import echopraxia.api.Field
+import echopraxia.plusscala.simple._
 
 import java.util.{Currency, UUID}
 import scala.concurrent.Future
@@ -71,7 +71,7 @@ class Printer extends Logging {
     logger.info("oneTrueString" -> Seq(ToValue(1), ToValue(true), ToValue("string")))
 
     // You can also use "withFields" to render JSON on every message (this will not show in line format)
-    logger.withFields(Seq[Field](book1, person1)).info("testing")
+    logger.withFields(book1, person1).info("testing")
 
     if (logger.isInfoEnabled) {
       logger.info(
