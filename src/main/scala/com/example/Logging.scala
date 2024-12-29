@@ -1,14 +1,14 @@
 package com.example
 
-import com.tersesystems.echopraxia.plusscala.api._
-import com.tersesystems.echopraxia.plusscala.generic._
+import echopraxia.plusscala.api._
+import echopraxia.plusscala.generic._
 
 import scala.concurrent.Future
 import java.util.{Currency, UUID}
 import scala.reflect.{ClassTag, classTag}
 
 // Each package can add its own mappings
-trait Logging extends LoggingBase with HeterogeneousFieldSupport with SemiAutoDerivation {
+trait Logging extends EchopraxiaBase with HeterogeneousFieldSupport with SemiAutoDerivation {
   implicit def futureToName[TV: ToValue: ClassTag]: ToName[Future[TV]] = _ => s"future[${classTag[TV].runtimeClass.getName}]"
 
   // Echopraxia takes a bit more work the more heterogeneous the input gets.
